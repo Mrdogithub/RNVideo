@@ -22,24 +22,47 @@ var List = React.createClass({
         return {
             dataSource: ds.cloneWithRows([
                 {
-                    "_id":"340000198901093377","thumb":"https://dummyimage.com/1200x600/26b1cb)","url":"https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
-                }
-                ,
+                    "_id": "320000197101165856",
+                    "thumb": "https://dummyimage.com/1280x720/8ce360)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
                 {
-                    "_id":"440000200311147754","thumb":"https://dummyimage.com/1200x600/7aa0c2)","url":"https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
-                }
-                ,
+                    "_id": "340000198104023229",
+                    "thumb": "https://dummyimage.com/1280x720/8ea264)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
                 {
-                    "_id":"640000200510254488","thumb":"https://dummyimage.com/1200x600/b0f5ef)","url":"https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
-                }
-                ,
+                    "_id": "440000201701121837",
+                    "thumb": "https://dummyimage.com/1280x720/4be079)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
                 {
-                    "_id":"820000197203044885","thumb":"https://dummyimage.com/1200x600/00486c)","url":"https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
-                }
-                ,
+                    "_id": "610000201402057400",
+                    "thumb": "https://dummyimage.com/1280x720/b2ff77)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
                 {
-                    "_id":"410000197905264165","thumb":"https://dummyimage.com/1200x600/64fedf)","url":"https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
-                }
+                    "_id": "230000201506238651",
+                    "thumb": "http://dummyimage.com/1280x720/8bbafc)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
+                {
+                    "_id": "640000199009182788",
+                    "thumb": "http://dummyimage.com/1280x720/5ced03)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
+                {
+                    "_id": "130000201605085079",
+                    "thumb": "http://dummyimage.com/1280x720/0e9aaa)",
+                    "title": "测试内容55s1",
+                    "url": "https://www.imooc.com/763f81b8-d1a2-494e-a954-4138eb5400dc"
+                },
             ]),
         }
     },
@@ -47,7 +70,7 @@ var List = React.createClass({
         return (
             <TouchableHighlight>
                 <View style={styles.item}>
-                    <Text style={styles.title}>{row._id}</Text>
+                    <Text style={styles.title}>{row.title}</Text>
                     <Image
                         source={{uri: row.thumb}}
                         style={styles.thumb}>
@@ -89,6 +112,7 @@ var List = React.createClass({
                 dataSource={this.state.dataSource}
                 renderRow={this.renderRow}
                 enableEmptySections = {true}
+                automaticallyAdjustContentInsets = {false}
             />
             <Text></Text>
         </View>
@@ -123,7 +147,7 @@ var styles = StyleSheet.create({
   },
   thumb: {
       width: width,
-      height: width * 0.5,
+      height: width * 0.56,
       resizeMode: 'cover',
       backgroundColor: "#000"
   },
