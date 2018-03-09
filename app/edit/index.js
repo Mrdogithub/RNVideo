@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 
 var Edit = React.createClass({
-    render: function(){
+    render () {
       return (
         <View style={styles.container}>
           <Text>编辑页面</Text>

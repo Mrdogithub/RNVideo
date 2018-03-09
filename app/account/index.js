@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 
 var Account = React.createClass({
-    render: function(){
+    render () {
       return (
         <View style={styles.container}>
           <Text>账户页面</Text>

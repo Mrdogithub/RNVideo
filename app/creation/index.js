@@ -1,5 +1,6 @@
 var IonIcons = require('react-native-vector-icons/Ionicons')
-
+var Request = require('../common/request')
+var Config = require('../common/config')
 import React from 'react';
 
 import {
@@ -14,7 +15,7 @@ import {
 } from 'react-native';
 var width = Dimensions.get('window').width
 var List = React.createClass({
-    getInitialState: function() {
+    getInitialState() {
         var ds = new ListView.DataSource({
             rowHasChanged: (r1, r2) => r1 !== r2
         })
@@ -66,7 +67,27 @@ var List = React.createClass({
             ]),
         }
     },
-    renderRow: function(row){
+    componentDidMount () {
+        this._fetchData()
+    },
+    _fetchData () {
+        Request.get(Config.api.base + Config.api.creations,{
+            accessToken: 'asfas'
+        }).then((data) => {
+            // 通过mockjs ，解析rap返回的数据
+            var data = Mock.mock(responseText)
+            if (data.success) {
+                this.setState({
+                    dataSource: this.state.dataSource.cloneWithRows(data.data)
+                })
+            }
+            console.log(data)
+        })
+        .catch((error) => {
+            console.warn(error)
+        })
+    },
+    renderRow (row){
         return (
             <TouchableHighlight>
                 <View style={styles.item}>
@@ -102,7 +123,7 @@ var List = React.createClass({
             </TouchableHighlight>
         )
     },
-    render: function(){
+    render () {
       return (
         <View style={styles.tabContent}>
             <View style={styles.header}>
