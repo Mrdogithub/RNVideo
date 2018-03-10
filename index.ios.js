@@ -27,13 +27,13 @@ var myFunReactNative = React.createClass({
     description: 'Tab-based navigation.',
   },
   displayName: 'myFunReactNative',
-  getInitialState: function() {
+  getInitialState () {
     return {
       selectedTab: 'redTab',
     };
   },
 
-  _renderContent: function(color: string, pageText: string, num?: number) {
+  _renderContent (color: string, pageText: string, num?: number) {
     return (
       <View style={[styles.tabContent, {backgroundColor: color}]}>
         <Text style={styles.tabText}>{pageText}</Text>
@@ -42,7 +42,7 @@ var myFunReactNative = React.createClass({
     );
   },
 
-  render: function() {
+  render () {
     return (
       <TabBarIOS tintColor="#ee735c">
         <IonIcons.TabBarItem
