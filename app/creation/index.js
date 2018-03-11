@@ -1,6 +1,7 @@
 var IonIcons = require('react-native-vector-icons/Ionicons')
 var Request = require('../common/request')
 var Config = require('../common/config')
+
 import React from 'react';
 
 import {
@@ -9,6 +10,7 @@ import {
     TouchableHighlight,
     ActivityIndicator,
     RefreshControl,
+    AlertIOS,
     Dimensions,
     Text,
     View,
@@ -22,6 +24,80 @@ var cachedResult = {
     items: [], // 列表中所有的数据
     total: 0 // 列表长度
 }
+
+// listView 子组件
+var Item = React.createClass({
+    getInitialState () {
+        var row = this.props.row
+        return ({
+            up: row.voted,
+            row: row
+        })
+    },
+    _up () {
+        var up = !this.state.up
+        var row = this.state.row
+        var url = Config.api.base + Config.api.up
+        var that = this
+        AlertIOS.alert(row._id)
+        var body = {
+            id: row._id,
+            up: up? 'yes' : 'no',
+            accessToken: 'abc'
+        }
+
+        Request.post(url, body).then(function(data){
+            if(data && data.success) {
+                that.setState({
+                    up: up
+                })
+            } else {
+                AlertIOS.alert('点赞失败，稍后重试')
+            }
+        }).catch(function(error){
+            AlertIOS.alert(error)
+        })
+    },
+    render () {
+        var row = this.state.row
+        return (
+            <TouchableHighlight>
+                <View style={styles.item}>
+                    <Text style={styles.title}>{row.title}</Text>
+                    <Image
+                        source={{uri: row.thumb}}
+                        style={styles.thumb}>
+                        <IonIcons 
+                            name="ios-play"
+                            size={28}
+                            style={styles.play}
+                        />
+                    </Image>
+                    <View style={styles.itemFooter}>
+                        <View style={styles.handleBox}>
+                            <IonIcons 
+                                name={this.state.up? 'ios-heart' : 'ios-heart-outline'}
+                                size={28}
+                                style={[styles.up,this.state.up?null:styles.down]}
+
+                                onPress = {this._up}
+                            />
+                            <Text style={styles.handleText} onPress = {this._up}>喜欢</Text>
+                        </View>
+                        <View style={styles.handleBox}>
+                            <IonIcons 
+                                name="ios-chatboxes-outline"
+                                size={28}
+                                style={styles.commentIcon}
+                            />
+                            <Text style={styles.handleText}>评论</Text>
+                        </View>
+                    </View>
+                </View>
+            </TouchableHighlight>
+        )
+    }
+})
 var List = React.createClass({
     getInitialState() {
         var ds = new ListView.DataSource({
@@ -211,38 +287,7 @@ var List = React.createClass({
     },
     _renderRow (row){
         return (
-            <TouchableHighlight>
-                <View style={styles.item}>
-                    <Text style={styles.title}>{row.title}</Text>
-                    <Image
-                        source={{uri: row.thumb}}
-                        style={styles.thumb}>
-                        <IonIcons 
-                            name="ios-play"
-                            size={28}
-                            style={styles.play}
-                        />
-                    </Image>
-                    <View style={styles.itemFooter}>
-                        <View style={styles.handleBox}>
-                            <IonIcons 
-                                name="ios-heart-outline"
-                                size={28}
-                                style={styles.up}
-                            />
-                            <Text style={styles.handleText}>喜欢</Text>
-                        </View>
-                        <View style={styles.handleBox}>
-                            <IonIcons 
-                                name="ios-chatboxes-outline"
-                                size={28}
-                                style={styles.commentIcon}
-                            />
-                            <Text style={styles.handleText}>评论</Text>
-                        </View>
-                    </View>
-                </View>
-            </TouchableHighlight>
+            <Item row = {row}/>
         )
     },
     render () {
@@ -348,6 +393,10 @@ var styles = StyleSheet.create({
       fontSize: 22,
       color: '#333'
   },
+  down: {
+    fontSize: 22,
+    color: '#ed7b66'
+    },
   commentIcon: {
       fontSize: 22,
       color: '#333'
