@@ -11,6 +11,7 @@ import React, {
 import {
   AppRegistry,
   StyleSheet,
+  Navigator,
   Text,
   TabBarIOS,
   View
@@ -54,7 +55,23 @@ var myFunReactNative = React.createClass({
               selectedTab: 'blueTab'
             });
           }}>
-          <List />
+        <Navigator
+          initialRoute = {{
+            name: 'list',
+            component: List
+          }}
+
+          configureScene = {(route) => {
+            return Navigator.SceneConfigs.FloatFromRight
+          }}
+
+          renderScene = {(route,navigator) => {
+            var Component = route.component
+
+            return <Component {...route.params} navigator = {navigator}/>
+          }}
+
+        />
         </IonIcons.TabBarItem>
         <IonIcons.TabBarItem
           iconName="ios-recording-outline"
