@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   ActivityIndicator,
+  TouchableOpacity,
   Dimensions,
   View
 } from 'react-native';
@@ -28,10 +29,13 @@ var Detail = React.createClass({
 			videoProgress: 0.01,
 			videoTotal:0,
 			currentTime:0,
-			playing: false
+			playing: false,
+
+			paused: false,
+			videoOk: true
 		}
 	},
-	_backToList () {
+	_pop () {
     	this.props.navigator.pop()
 	},
 	_onLoad () {
@@ -70,17 +74,44 @@ var Detail = React.createClass({
 		})
 	},
 	_onError (e) {
+		this.setState({
+			videoOk: false
+		})
 		console.log(e)
 		console.log('_onError')
 	},
 	_rePlay () {
 		this.refs.videoPlayer.seek(0)
 	},
+	_pause () {
+		console.log('_pause')
+		if(!this.state.paused) {
+			this.setState({
+				paused: true
+			})
+		}
+	},
+	_resume () {
+		console.log('_resume')
+		if(this.state.paused) {
+			this.setState({
+				paused: false
+			})
+		}
+	},
 	render () {
 		var data = this.props.data
 		return (
 			<View style={styles.container}>
-			<Text onPress = {this._backToList} style = {styles.center}>go back</Text>
+			<View style = {styles.header}>
+				<TouchableOpacity 
+					style = {styles.backBox}
+					onPress = {this._pop}>
+					<IonIcons name = 'ios-arrow-back' style = {styles.backIcon}/>
+					<Text style = {styles.backText}>返回</Text>
+				</TouchableOpacity>
+				<Text style = {styles.headerText} numberOflines = {1}>视屏详情页</Text>
+			</View>
 			<View style = {styles.video.Box}>
 				<Video
 				ref = 'videoPlayer'
@@ -88,7 +119,7 @@ var Detail = React.createClass({
 				style = {styles.video}
 
 				volume = {5} // 声音放大倍数
-				pause = {false} // 是否暂停
+				paused = {this.state.paused} // 是否暂停
 				rate = {this.state.rate} // rate 的取值是 0 和1  ， 0是暂停，1是正常
 				muted = {this.state.muted} // muted 是否静音 true false
 				resizeMode = {this.state.resizeMode}// 视屏拉伸方式
@@ -106,11 +137,29 @@ var Detail = React.createClass({
 				onError = {this._onError}
 				/>
 				{
+					!this.state.videoOk && <Text color= '#EE735C' style = {styles.videoOk} > 视屏出错！ 很抱歉 </Text>
+				}
+
+				{
 					!this.state.videoLoaded && <ActivityIndicator color= '#EE735C' style = {styles.loading} />
 				}
 
 				{
 					this.state.videoLoaded && !this.state.playing ? <IonIcons onPress = {this._rePlay} size={48} name = 'ios-play' style = {styles.playIcon} /> : null
+				}
+
+				{
+					this.state.videoLoaded && this.state.playing ? 
+						<TouchableOpacity style = {styles.pauseBtn} onPress = {this._pause}>
+							{this.state.paused ?
+								<IonIcons 
+									onPress = {this._resume} 
+									size={48} 
+									name = 'ios-play' 
+									style = {styles.resumeIcon} 
+								/> : null
+							}
+						</TouchableOpacity> : null
 				}
 				<View style = {styles.progressBox}>
 					<View style = {[styles.progressBar, {width: width * this.state.videoProgress}]}>
@@ -128,6 +177,39 @@ var styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
+	header: {
+		flexDirection: 'row',
+		justifyContent: 'center',
+		alignItems: 'center',
+		width: width,
+		height: 64,
+		paddingTop: 20,
+		paddingLeft: 10,
+		paddingRight: 10,
+		borderBottomWidth: 1,
+		borderColor: 'rgba(0,0,0,0.1)',
+		backgroundColor: '#fff'
+  },
+  backBox: {
+	  position: 'absolute',
+	  left: 12,
+	  top:32,
+	  width: 50,
+	  flexDirection: 'row',
+	  alignItems: 'center'
+  },
+  headerTitle: {
+	  width: width -120,
+	  textAlign: 'center'
+  },
+  backIcon: {
+	  color: '#999',
+	  fontSize: 20,
+	  marginRight: 5
+  },
+  backText: {
+	  color: '#999'
+  },
   videoBox: {
 	  width: width,
 	  height: 360,
@@ -144,6 +226,15 @@ var styles = StyleSheet.create({
 	  top:140,
 	  width: width,
 	  alignSelf: 'center',
+	  backgroundColor: 'transparent'
+  },
+ videoOk: {
+	  position: 'absolute',
+	  left:0,
+	  top:140,
+	  width: width,
+	  textAlign: 'center',
+	  color: '#fff',
 	  backgroundColor: 'transparent'
   },
   progressBox: {
@@ -170,6 +261,27 @@ var styles = StyleSheet.create({
       borderWidth: 1,
       borderRadius: 30,
       color: '#ed7b66'
+  },
+  pauseBtn: {
+	position: 'absolute',
+	left:0,
+	top: 0,
+	width: width,
+	height:360
+  },
+  resumeIcon:{
+   	position: 'absolute',
+	top: 140,
+	left: width / 2 -30,
+	width: 60,
+	height: 60,
+	paddingTop:8,
+	paddingLeft: 22,
+	backgroundColor: 'transparent',
+	borderColor: '#fff',
+	borderWidth: 1,
+	borderRadius: 30,
+	color: '#ed7b66'
   }
 });
 
