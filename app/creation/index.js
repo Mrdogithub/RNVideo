@@ -112,61 +112,44 @@ var List = React.createClass({
                     "_id": "320000197101165856",
                     "thumb": "https://dummyimage.com/1280x720/8ce360)",
                     "title": "测试内容55s1",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
+                    "author": {
+                        "nickname": 'nickname',
+                        'avatar': 'https://dummyimage.com/640x640/8ea264)'
+                    },
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
                 },
                 {
                     "_id": "340000198104023229",
                     "thumb": "https://dummyimage.com/1280x720/8ea264)",
                     "title": "测试内容55s1",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
                 },
                 {
                     "_id": "440000201701121837",
                     "thumb": "https://dummyimage.com/1280x720/4be079)",
                     "title": "测试内容55s1",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
                 },
                 {
                     "_id": "610000201402057400",
                     "thumb": "https://dummyimage.com/1280x720/b2ff77)",
                     "title": "测试内容55s1",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
                 },
                 {
                     "_id": "230000201506238651",
                     "thumb": "http://dummyimage.com/1280x720/8bbafc)",
                     "title": "测试内容55s1",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
                 },
                 {
                     "_id": "640000199009182788",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
                     "thumb": "http://dummyimage.com/1280x720/5ced03)",
                     "title": "测试内容55s1",
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
                 },
                 {
                     "_id": "130000201605085079",
-                    'videoProgress': 0.01,
-                    'videoTotal':0,
-                    'currentTime':0,
                     "thumb": "http://dummyimage.com/1280x720/0e9aaa)",
                     "title": "测试内容55s1",
                     "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
