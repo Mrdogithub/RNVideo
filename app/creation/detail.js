@@ -8,12 +8,17 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Dimensions,
+  TextInput,
+  AlertIOS,
+  Modal,
   ListView,
   Image,
   View
 } from 'react-native';
+import Button from 'react-native-button'
 var IonIcons = require('react-native-vector-icons/Ionicons')
 var Video = require('react-native-video').default
+// var Button = require('react-native-button')
 var Request = require('../common/request')
 var Config = require('../common/config')
 
@@ -126,7 +131,14 @@ var Detail = React.createClass({
 			playing: false,
 
 			paused: false,
-			videoOk: true
+			videoOk: true,
+
+			//modal
+			animattionType: 'none',
+			modalVisible: false,
+
+			isSending: false, // 判断发送状态Flag
+			content: ''
 		}
 	},
 	componentDidMount () {
@@ -184,21 +196,51 @@ var Detail = React.createClass({
         var page = cachedResult.nextPage;
         this._fetchData(page)
 	},
+	_focus () {
+		this._setModalVisible(true)
+	},
+	_setModalVisible (isVisible) {
+		this.setState({
+			modalVisible: isVisible
+		})
+	},
+	_blur () {
+
+	},
+	_closeModal () {
+		this._setModalVisible(false)
+	},
 	_renderHeader () {
 		var data = this.state.data
 
 		return (
-		<View style = {styles.infoBox}>
-			<Image style = {styles.avatar} source = {{uri: data.author.avatar}} />
-			<View>
-				<Text style = {styles.nickName}>{data.author.nickname}</Text>
-				<Text style = {styles.title}>{data.title}</Text>
+			<View style = {styles.listHeader}>
+				<View style = {styles.infoBox}>
+					<Image style = {styles.avatar} source = {{uri: data.author.avatar}} />
+					<View>
+						<Text style = {styles.nickName}>{data.author.nickname}</Text>
+						<Text style = {styles.title}>{data.title}</Text>
+					</View>
+				</View>
+
+				<View style = {styles.commentBox}>
+					<View style = {styles.comment}>
+						<TextInput
+							placeholder = '您此时的感受是....'
+							style = {styles.content}
+							multiline = {true}
+							onFocus = {this._focus} // 获取焦点 显示评论弹出框
+						></TextInput>
+					</View>
+				</View>
+
+				<View style = {styles.commentArea}>
+					<Text style = {styles.commentTitle}>精彩评论</Text>
+				</View>
 			</View>
-		</View>)
+		)
 	},
     _renderFooter (status) {
-
-		console.log('_renderFooter' + this._hasMore + cachedResult.total)
         // 没有可加载的数据，需要提供用户提示信息
         if(!this._hasMore &&cachedResult.total !== 0) {
             return (
@@ -215,6 +257,7 @@ var Detail = React.createClass({
                 </View>
             )          
         }
+
         //数据正在加载，不会触发loading
         if (this.state.isLoadingTail) {
             return (
@@ -225,7 +268,6 @@ var Detail = React.createClass({
         }
 
         // 需要加载更多数据时，需要借助RN 组件 ActivityIndicatorIOS 显示loading状态
-
         return (<ActivityIndicator style = {styles.loadingMore}/>)
     },
 	_pop () {
@@ -302,6 +344,61 @@ var Detail = React.createClass({
 			</View>
 		</View>)
 	},
+	_submit () {
+		var that = this
+		if (!this.state.content) {
+			return AlertIOS.alert('评论不能为空！')
+		}
+
+		if (this.state.isSending) {
+			return AlertIOS.alert('正在评论中')
+		}
+
+		this.setState({
+			isSending: true
+		},function(){
+			var body = {
+				accessToken: 'abc',
+				creation: '1234',
+				content: this.state.content
+			}
+
+			var url = Config.api.base + Config.api.comment
+
+			Request.post(url,body)
+				.then(function(){
+					if (data && data.success) {
+						var items = cachedResult.items.slice()
+						var content = that.state.content
+						items = [{
+							content: content,
+							replyBy:{
+								avatar:'https://dummyimage.com/640x640/8bf70c)',
+								nickname:'Hi peter'
+							}
+						}].concat(items)
+
+						cachedResult.items = items
+						cachedResult.total = cachedResult.total +1
+						that.setState({
+							content: '',
+							isSending: false,
+							dataSource: that.state.dataSource.cloneWithRows(cachedResult.items)
+						})
+
+						that._setModalVisible(false)
+					}
+				})
+				.catch((error) => {
+					console.log(error)
+					that.setState({
+						isSending: false
+					})
+					that._setModalVisible(false)
+					AlertIOS.alert('留言失败，稍后重试')
+				})
+		})
+	},
 	render () {
 		var data = this.props.data
 		return (
@@ -329,7 +426,6 @@ var Detail = React.createClass({
 					repeat = {this.state.repeat}
 
 					//配置视屏播放和在播放过程有关的回调函数
-
 					onLoadStart = {this._onLoadStart} //视屏开始加载时的回调
 					onLoad = {this._onLoad} // 视屏不断加载时的回调
 
@@ -380,8 +476,36 @@ var Detail = React.createClass({
 					enableEmptySections = {true}
 					showsVerticalScrollIndicator = {false}
 					automaticallyAdjustContentInsets = {false}
-					
 					/>
+				 <Modal
+				 	animattionType = {'fade'} // modal 弹出的动画形式
+					 visible = {this.state.modalVisible} // 默认状态下是否可见
+					 onRequestClose = {() => {this._setModalVisible(false)}}>
+					<View style = {styles.modalContainer}>
+						<IonIcons
+							onPress = {this._closeModal}
+							name = 'ios-close-outline'
+							style = {styles.closeIcon}
+						/>
+						<View style = {styles.commentBox}>
+							<View style = {styles.comment}>
+								<TextInput
+									placeholder = '您此时的感受是....'
+									style = {styles.content}
+									multiline = {true}
+									defaultValue = {this.state.content} //文本初始值
+									onChangeText = {(text) => { // 输入文案的时候，触发onChangeText，实时更新状态中的content
+										this.setState({
+											content: text 
+										})
+									}}
+								></TextInput>
+							</View>
+						</View>
+
+						<Button style = {styles.submitBtn} onPress = {this._submit}>评论</Button>
+					</View>	 
+				</Modal>
 			</View>
 		)
 	}
@@ -404,6 +528,27 @@ var styles = StyleSheet.create({
 		borderBottomWidth: 1,
 		borderColor: 'rgba(0,0,0,0.1)',
 		backgroundColor: '#fff'
+	},
+	modalContainer: {
+		flex: 1,
+		paddingTop: 45,
+		backgroundColor: '#fff'
+	},
+	submitBtn: {
+		width: width - 20,
+		padding: 16,
+		marginTop: 20,
+		marginBottom: 20,
+		borderWidth: 1,
+		borderColor: '#ee735c',
+		borderRadius: 4,
+		color: '#ee753c',
+		fontSize: 18
+	},
+	closeIcon: {
+		alignSelf: 'center',
+		fontSize: 30,
+		color: '#ee753c'
 	},
 	backBox: {
 		position: 'absolute',
@@ -550,6 +695,33 @@ var styles = StyleSheet.create({
 	loadingText: {
 		color: "#777",
 		textAlign: 'center'
+	},
+	commentBox: {
+		marginTop: 10,
+		marginBottom: 10,
+		padding: 8,
+		width: width
+	},
+	content: {
+		paddingLeft: 2,
+		color: '#333',
+		borderWidth: 1,
+		borderColor: '#ddd',
+		borderRadius: 4,
+		fontSize: 14,
+		height: 80
+	},
+	listHeader: {
+		width: width,
+		marginTop: 10
+	},
+	commentArea: {
+		width: width,
+		paddingBottom: 6,
+		paddingLeft: 10,
+		paddingRight: 10,
+		borderBottomWidth: 1,
+		borderBottomColor: '#eee'
 	}
 });
 
