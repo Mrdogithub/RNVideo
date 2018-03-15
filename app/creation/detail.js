@@ -38,86 +38,7 @@ var Detail = React.createClass({
 		})
 		
 		return {
-			dataSource: ds.cloneWithRows([{
-				"_id": "620000200711101417",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/854c97)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Carol Young"
-				}
-			},
-			{
-				"_id": "500000200511148221",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/212881)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Joseph White"
-				}
-			},
-			{
-				"_id": "320000199410306754",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/f44276)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Brenda Williams"
-				}
-			},
-			{
-				"_id": "820000201112288568",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/8bf70c)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Cynthia Gonzalez"
-				}
-			},
-			{
-				"_id": "630000200707103155",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/6dae2f)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Amy Perez"
-				}
-			},
-			{
-				"_id": "150000197309142133",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/5ed90e)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Laura Jackson"
-				}
-			},
-			{
-				"_id": "210000201401077296",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/e22002)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Kevin Lopez"
-				}
-			},
-			{
-				"_id": "150000200311064546",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/57e732)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Susan Thompson"
-				}
-			},
-			{
-				"_id": "630000200108280758",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/e0a556)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Richard Anderson"
-				}
-			},
-			{
-				"_id": "510000199305065480",
-				"replyBy": {
-					"avatar": "https://dummyimage.com/640x640/001097)",
-					"content": " @cpargraph(1,3)",
-					"nickname": " Karen Rodriguez"
-				}
-			}]),
+			dataSource: ds.cloneWithRows([]),
 			data: data,
 			videoLoaded: false,
 			rate: 1,
@@ -142,7 +63,7 @@ var Detail = React.createClass({
 		}
 	},
 	componentDidMount () {
-		this._fetchData()
+		this._fetchData(1)
 	},
 	_fetchData (page) {
         var that = this
@@ -152,9 +73,9 @@ var Detail = React.createClass({
 		})
 		var url = Config.api.base + Config.api.comment
         Request.get(url,{
-			accessToken: 'asfas',
-			creations: '123',
-            page: page
+			accessToken: '123',
+			creation: '123',
+			page: page
         }).then((data) => {
 			console.log("hi data")
 			console.log(1,data)
@@ -177,6 +98,7 @@ var Detail = React.createClass({
             console.log(data)
         })
         .catch((error) => {
+			console.log(1,error)
 			this.setState({
 				isLoadingTail: false
 			})
@@ -216,7 +138,7 @@ var Detail = React.createClass({
 		return (
 			<View style = {styles.listHeader}>
 				<View style = {styles.infoBox}>
-					<Image style = {styles.avatar} source = {{uri: data.author.avatar}} />
+					<Image style = {styles.avatar} source = {{uri:data.author.avatar}} />
 					<View>
 						<Text style = {styles.nickName}>{data.author.nickname}</Text>
 						<Text style = {styles.title}>{data.title}</Text>
@@ -337,7 +259,7 @@ var Detail = React.createClass({
 	_renderRow (row) {
 		return(
 		<View style = {styles.replyBox} key = {row._id}>
-			<Image style = {styles.replyAvatar} source = {{uri: row.replyBy.avatar}} />
+			<Image style = {styles.replyAvatar} source = {{uri:row.replyBy.avatar}} />
 			<View style = {styles.reply}>
 				<Text style = {styles.replyNickName}>{row.replyBy.nickname}</Text>
 				<Text style = {styles.replyContent}>{row.replyBy.content}</Text>
@@ -415,7 +337,7 @@ var Detail = React.createClass({
 				<View style = {styles.video.Box}>
 					<Video
 					ref = 'videoPlayer'
-					source = {{uri: data.url}}
+					source = {{uri:data.url}}
 					style = {styles.video}
 
 					volume = {5} // 声音放大倍数

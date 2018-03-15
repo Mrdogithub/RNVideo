@@ -107,54 +107,7 @@ var List = React.createClass({
         return {
             isLoadingTail: false,
             isRefreshing: false,
-            dataSource: ds.cloneWithRows([
-                {
-                    "_id": "320000197101165856",
-                    "thumb": "https://dummyimage.com/1280x720/8ce360)",
-                    "title": "测试内容55s1",
-                    "author": {
-                        "nickname": 'nickname',
-                        'avatar': 'https://dummyimage.com/640x640/8ea264)'
-                    },
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-                {
-                    "_id": "340000198104023229",
-                    "thumb": "https://dummyimage.com/1280x720/8ea264)",
-                    "title": "测试内容55s1",
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-                {
-                    "_id": "440000201701121837",
-                    "thumb": "https://dummyimage.com/1280x720/4be079)",
-                    "title": "测试内容55s1",
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-                {
-                    "_id": "610000201402057400",
-                    "thumb": "https://dummyimage.com/1280x720/b2ff77)",
-                    "title": "测试内容55s1",
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-                {
-                    "_id": "230000201506238651",
-                    "thumb": "http://dummyimage.com/1280x720/8bbafc)",
-                    "title": "测试内容55s1",
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-                {
-                    "_id": "640000199009182788",
-                    "thumb": "http://dummyimage.com/1280x720/5ced03)",
-                    "title": "测试内容55s1",
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-                {
-                    "_id": "130000201605085079",
-                    "thumb": "http://dummyimage.com/1280x720/0e9aaa)",
-                    "title": "测试内容55s1",
-                    "url": "https://vz-cdn.contentabc.com/ads/bz_950x250_726015/uploadMP4.mp4"
-                },
-            ]),
+            dataSource: ds.cloneWithRows([]),
         }
     },
     componentDidMount () {
@@ -178,14 +131,15 @@ var List = React.createClass({
             page: page
         }).then((data) => {
             // 通过mockjs ，解析rap返回的数据
-            var data = Mock.mock(responseText)
             if (data.success) {
                 // clone 当前数据
                 var items = cachedResult.items.slice()
 
                 if (page !== 0) {
                     //将获取的新列表追加到拷贝列表中
-                    items.concat(data.data)
+                    items = items.concat(data.data)
+                    console.log('item')
+                    console.log(1,data.data)
                     cachedResult.nextPage += 1
                 } else {
                     items = data.data.concat(items)
@@ -194,25 +148,37 @@ var List = React.createClass({
                 // 更新缓存中的数据列表
                 cachedResult.items = items
                 cachedResult.total = data.total
-
-                setTimeout(function () {
-                    if (page !== 0 ) {
-                        // 用获取到新数据，重新渲染ListView
-                        that.setState({
-                            dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-                            isLoadingTail: false
-                        })
-                    } else {
-                        // 用获取到新数据，重新渲染ListView
-                        that.setState({
-                            dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-                            isRefreshing: false
-                        })
-                    }
+    
+                if (page !== 0 ) {
+                    // 用获取到新数据，重新渲染ListView
+                    that.setState({
+                        dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+                        isLoadingTail: false
+                    })
+                } else {
+                    // 用获取到新数据，重新渲染ListView
+                    that.setState({
+                        dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+                        isRefreshing: false
+                    })
+                }
+                // setTimeout(function () {
+                //     if (page !== 0 ) {
+                //         // 用获取到新数据，重新渲染ListView
+                //         that.setState({
+                //             dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+                //             isLoadingTail: false
+                //         })
+                //     } else {
+                //         // 用获取到新数据，重新渲染ListView
+                //         that.setState({
+                //             dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+                //             isRefreshing: false
+                //         })
+                //     }
                    
-                }, 2000)
+                // }, 2000)
             }
-            console.log(data)
         })
         .catch((error) => {
             if (page !== 0) {
