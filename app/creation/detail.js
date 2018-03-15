@@ -38,21 +38,23 @@ var Detail = React.createClass({
 		})
 		
 		return {
-			dataSource: ds.cloneWithRows([]),
-			data: data,
-			videoLoaded: false,
-			rate: 1,
-			resizeMode: 'cover',
-			muted: true,
-			repeat: false,
+			dataSource: ds.cloneWithRows([]), //评论的数据集
+			data: data, // 当前视屏信息
 
+			// video 加载
+			videoLoaded: false,
 			videoProgress: 0.01,
 			videoTotal:0,
 			currentTime:0,
 			playing: false,
-
 			paused: false,
 			videoOk: true,
+
+			// video 播放器
+			rate: 1,
+			muted: true,
+			resizeMode: 'cover',			
+			repeat: false,
 
 			//modal
 			animattionType: 'none',
@@ -83,19 +85,19 @@ var Detail = React.createClass({
             if (data.success) {
                 // clone 当前数据
                 var items = cachedResult.items.slice()
-                items = data.data.concat(items)
-             
+
+				             
 				// 更新缓存中的数据列表
+                items = items.concat(data.data)
 				cachedResult.nextPage += 1
                 cachedResult.items = items
-                cachedResult.total = data.total || 10
+                cachedResult.total = data.total
 
 				that.setState({
 					dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
 					isLoadingTail: false
 				})
             }
-            console.log(data)
         })
         .catch((error) => {
 			console.log(1,error)
@@ -110,13 +112,13 @@ var Detail = React.createClass({
     },
     _fetchMoreData () {
         // 判断当前数据是否已经加载完毕，如果没有加载完毕则在原来基础上进行累加显示
-        if (!this._hasMore() || cachedResult.isLoadingTail) {
-            //如果没有数据，或者数据正在加载，将不会触发请求
-            return
-        }
+        // if (!this._hasMore() || cachedResult.isLoadingTail) {
+        //     //如果没有数据，或者数据正在加载，将不会触发请求
+        //     return
+        // }
         
-        var page = cachedResult.nextPage;
-        this._fetchData(page)
+        // var page = cachedResult.nextPage;
+        // this._fetchData(page)
 	},
 	_focus () {
 		this._setModalVisible(true)
@@ -196,7 +198,6 @@ var Detail = React.createClass({
     	this.props.navigator.pop()
 	},
 	_onLoad () {
-		console.log('_onLoad')
 	},
 	_onProgress (data) {
 		if (!this.state.videoLoaded) {
@@ -234,14 +235,11 @@ var Detail = React.createClass({
 		this.setState({
 			videoOk: false
 		})
-		console.log(e)
-		console.log('_onError')
 	},
 	_rePlay () {
 		this.refs.videoPlayer.seek(0)
 	},
 	_pause () {
-		console.log('_pause')
 		if(!this.state.paused) {
 			this.setState({
 				paused: true
@@ -249,7 +247,6 @@ var Detail = React.createClass({
 		}
 	},
 	_resume () {
-		console.log('_resume')
 		if(this.state.paused) {
 			this.setState({
 				paused: false
@@ -267,6 +264,7 @@ var Detail = React.createClass({
 		</View>)
 	},
 	_submit () {
+		console.log('submit')
 		var that = this
 		if (!this.state.content) {
 			return AlertIOS.alert('评论不能为空！')
@@ -336,26 +334,26 @@ var Detail = React.createClass({
 				</View>
 				<View style = {styles.video.Box}>
 					<Video
-					ref = 'videoPlayer'
-					source = {{uri:data.url}}
-					style = {styles.video}
+						ref = 'videoPlayer'
+						source = {{uri:data.url}}
+						style = {styles.video}
 
-					volume = {5} // 声音放大倍数
-					paused = {this.state.paused} // 是否暂停
-					rate = {this.state.rate} // rate 的取值是 0 和1  ， 0是暂停，1是正常
-					muted = {this.state.muted} // muted 是否静音 true false
-					resizeMode = {this.state.resizeMode}// 视屏拉伸方式
-					repeat = {this.state.repeat}
+						volume = {5} // 声音放大倍数
+						paused = {this.state.paused} // 是否暂停
+						rate = {this.state.rate} // rate 的取值是 0 和1  ， 0是暂停，1是正常
+						muted = {this.state.muted} // muted 是否静音 true false
+						resizeMode = {this.state.resizeMode}// 视屏拉伸方式
+						repeat = {this.state.repeat}
 
-					//配置视屏播放和在播放过程有关的回调函数
-					onLoadStart = {this._onLoadStart} //视屏开始加载时的回调
-					onLoad = {this._onLoad} // 视屏不断加载时的回调
+						//配置视屏播放和在播放过程有关的回调函数
+						onLoadStart = {this._onLoadStart} //视屏开始加载时的回调
+						onLoad = {this._onLoad} // 视屏不断加载时的回调
 
-					// 了解当前视屏播放的进度，同时提供用户提示 ，视屏播放的时候，每隔250毫秒，
-					//调用一次onPgregress 同时将当前的已播放时间作为参数传入回调
-					onProgress = {this._onProgress} 
-					onEnd = {this._onEnd}
-					onError = {this._onError}
+						// 了解当前视屏播放的进度，同时提供用户提示 ，视屏播放的时候，每隔250毫秒，
+						//调用一次onPgregress 同时将当前的已播放时间作为参数传入回调
+						onProgress = {this._onProgress} 
+						onEnd = {this._onEnd}
+						onError = {this._onError}
 					/>
 					{
 						!this.state.videoOk && <Text color= '#EE735C' style = {styles.videoOk} > 视屏出错！ 很抱歉 </Text>
