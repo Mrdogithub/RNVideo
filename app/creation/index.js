@@ -194,6 +194,7 @@ var List = React.createClass({
     },
     _hasMore () {
         // 将当前数据的长度 与 数据总长度进行比较,确定是否有更多数据
+        console.log('cachedResult.items.length !== cachedResult.total:' + cachedResult.items.length !== cachedResult.total)
         return cachedResult.items.length !== cachedResult.total
     },
     _fetchMoreData () {
@@ -208,7 +209,9 @@ var List = React.createClass({
     },
     _renderFooter (status) {
         // 没有可加载的数据，需要提供用户提示信息
-        if(!this._hasMore &&cachedResult.total !== 0) {
+        console.log(this._hasMore + "this.hasMore")
+        console.log(cachedResult.total +"cacheResult")
+        if(!this._hasMore() &&cachedResult.total !== 0) {
             return (
                 <View style = {styles.loadingMore}>
                     <Text style = {styles.loadingText}>没有更多了</Text>

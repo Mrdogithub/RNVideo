@@ -108,14 +108,15 @@ var Detail = React.createClass({
     },
     _hasMore () {
 		// 将当前数据的长度 与 数据总长度进行比较,确定是否有更多数据
+		console.log(cachedResult.items.length + ": " + cachedResult.total)
         return cachedResult.items.length !== cachedResult.total
     },
     _fetchMoreData () {
         // 判断当前数据是否已经加载完毕，如果没有加载完毕则在原来基础上进行累加显示
-        // if (!this._hasMore() || cachedResult.isLoadingTail) {
-        //     //如果没有数据，或者数据正在加载，将不会触发请求
-        //     return
-        // }
+        if (!this._hasMore() || cachedResult.isLoadingTail) {
+            //如果没有数据，或者数据正在加载，将不会触发请求
+            return
+        }
         
         // var page = cachedResult.nextPage;
         // this._fetchData(page)
@@ -166,7 +167,7 @@ var Detail = React.createClass({
 	},
     _renderFooter (status) {
         // 没有可加载的数据，需要提供用户提示信息
-        if(!this._hasMore &&cachedResult.total !== 0) {
+        if(!this._hasMore() &&cachedResult.total !== 0) {
             return (
                 <View style = {styles.loadingMore}>
                     <Text style = {styles.loadingText}>没有更多了</Text>
@@ -286,15 +287,16 @@ var Detail = React.createClass({
 			var url = Config.api.base + Config.api.comment
 
 			Request.post(url,body)
-				.then(function(){
+				.then(function(data){
 					if (data && data.success) {
 						var items = cachedResult.items.slice()
 						var content = that.state.content
 						items = [{
-							content: content,
+							
 							replyBy:{
 								avatar:'https://dummyimage.com/640x640/8bf70c)',
-								nickname:'Hi peter'
+								nickname:'Hi peter',
+								content: content
 							}
 						}].concat(items)
 
@@ -322,7 +324,7 @@ var Detail = React.createClass({
 	render () {
 		var data = this.props.data
 		return (
-			<View style={styles.container}>
+			<View style={styles.tabContent}>
 				<View style = {styles.header}>
 					<TouchableOpacity 
 						style = {styles.backBox}
