@@ -2,7 +2,7 @@ var IonIcons = require('react-native-vector-icons/Ionicons')
 var Request = require('../common/request')
 var Config = require('../common/config')
 var Detail = require('./detail')
-import React from 'react';
+import React , { Component }from 'react';
 
 import {
     Image,

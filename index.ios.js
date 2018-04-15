@@ -4,9 +4,7 @@
  */
 
 var IonIcons = require('react-native-vector-icons/Ionicons')
-import React, {
-  Component,
-} from 'react';
+import React , { Component }from 'react';
 
 import {
   AppRegistry,
@@ -14,14 +12,15 @@ import {
   Navigator,
   Text,
   TabBarIOS,
-  View
+  View,
+  AsyncStorage
 } from 'react-native';
 
 //创建内容子组件
 var List = require('./app/creation/index')
 var Edit = require('./app/edit/index')
+var Login = require('./app/account/login')
 var Account = require('./app/account/index')
-
 var myFunReactNative = React.createClass({
   statics: {
     title: '<TabBarIOS>',
@@ -30,7 +29,9 @@ var myFunReactNative = React.createClass({
   displayName: 'myFunReactNative',
   getInitialState () {
     return {
-      selectedTab: 'redTab',
+      selectedTab: 'blueTab',
+      isLogin: false,
+      user:null
     };
   },
 
@@ -43,7 +44,46 @@ var myFunReactNative = React.createClass({
     );
   },
 
+  componentDidMount() {
+    this._asyncAppStatus()
+  },
+  _asyncAppStatus() {
+    var that = this
+    console.log('get user')
+    AsyncStorage.getItem('user')
+    .then((data) => {
+      var user
+      var newState = {};
+      if(data) {
+        user = JSON.parse(data)
+      }
+      if(user && user.accessToken) {
+        newState.user = user
+        newState.isLogin = true
+      }else{
+        newState.isLogin = false
+      }
+      that.setState(newState)
+    })
+  },
+  _afterLogin(user) {
+    console.log('====== user ======')
+    console.log(1,user)
+    var that = this
+    var user =JSON.stringify(user)
+    //登陆成功后，更新本地存储的数据
+    AsyncStorage.setItem('user',user)
+    .then(()=>{
+      that.setState({
+        user:user,
+        isLogin:true
+      })
+    })
+  },
   render () {
+    if(!this.state.isLogin) {
+      return <Login afterLogin={this._afterLogin}/>
+    }
     return (
       <TabBarIOS tintColor="#ee735c">
         <IonIcons.TabBarItem
@@ -83,7 +123,7 @@ var myFunReactNative = React.createClass({
               selectedTab: 'redTab'
             });
           }}>
-		  <Edit />
+		      <Edit />
         </IonIcons.TabBarItem>
         <IonIcons.TabBarItem
           iconName="ios-more-outline"
@@ -94,7 +134,7 @@ var myFunReactNative = React.createClass({
               selectedTab: 'greenTab'
             });
           }}>
-          <Account />
+          <Account/>
         </IonIcons.TabBarItem>
       </TabBarIOS>
     );

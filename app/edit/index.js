@@ -1,6 +1,6 @@
 var IonIcons = require('react-native-vector-icons/Ionicons')
 
-import React from 'react';
+import React, { Component } from 'react';
 import {
   StyleSheet,
   Text,
