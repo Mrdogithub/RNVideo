@@ -3,8 +3,8 @@
 
 var https = require('https');
 var querystring = require('querystring');
-var Promise = rquire('bluebird')
-var speakeasy = rquire('speakeasy')
+var Promise = require('bluebird')
+var speakeasy = require('speakeasy')
 
 exports.getCode = function() {
     var code = speakeasy.totp({

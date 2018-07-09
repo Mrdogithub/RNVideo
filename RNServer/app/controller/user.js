@@ -6,14 +6,14 @@ console.log(1,mongoose)
 var User = mongoose.model('User')
 var xss = require('xss')
 exports.signup = function *(next) {
-    var phoneNumber = this.request.body.phoneNumber
+    var phoneNumber = xss(this.request.body.phoneNumber.trim())
     var user = yield User.findOne({
         phoneNumber: phoneNumber
     }).exec()
-    //无论用户是否注册成功，都需要生成一个验证码
+    //无论用户是否注册成功，都需要更新用户验证码
     var verifyCode = sms.getCode()
     if(!user){
-        var accessToken = uuid.v4()
+        var accessToken = uuid.v4()// 生成一个4段的token值
 
         user = new User({
             phoneNumber : xss(phoneNumber),
@@ -25,7 +25,7 @@ exports.signup = function *(next) {
     } else{
         user.verifyCode = verifyCode
     }
-
+     console.log(1, user)
     //用户数据保存
     try {
         user = yield user.save()
@@ -40,16 +40,16 @@ exports.signup = function *(next) {
     var msg = '您的注册验证码是：'+user.verifyCode
 
     //包一层try catch ，避免发生错误导致程序挂起
-    try{
-        sms.sent(user.phoneNumber, msg)
-    }catch(e){
-        console.log(e)
-        this.body = {
-            'success': false,
-            'err':'短信发送异常'
-        }
-        return next
-    }
+    // try{
+    //     sms.sent(user.phoneNumber, msg)
+    // }catch(e){
+    //     console.log(e)
+    //     this.body = {
+    //         'success': false,
+    //         'err':'短信发送异常'
+    //     }
+    //     return next
+    // }
     this.body = {
         'success': true
     }
@@ -96,26 +96,27 @@ exports.verify = function *(next) {
 
 exports.update = function *(next) {
     var body = this.request.body
-    var accessToken = body.accessToken
+    var user =this.session.user
+    // 通过App.hasBody 的中间件已经完成查询的任务，不需要在重新获取
+    //var accessToken = body.accessToken
+    // var user  = yield User.findOne({
+    //     'accessToken': accessToken
+    // }).exec()
 
-    var user  = yield User.findOne({
-        'accessToken': accessToken
-    }).exec()
+    // if(!user){
+    //     this.body = {
+    //         'success': false,
+    //         'err': '用户丢失'
+    //     }
 
-    if(!user){
-        this.body = {
-            'success': false,
-            'err': '用户丢失'
-        }
-
-        return next 
-    }
+    //     return next 
+    // }
 
     var updateFileds = 'avatar,gender,age,nickname,breed'.split(',')
 
     updateFileds.forEach(function(fild){
         if(body[fild]){
-            user[fild] = body[fild]
+            user[fild] = xss(body[fild].trim())
         }
     })
 
