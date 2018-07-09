@@ -8,7 +8,7 @@ module.exports = function() {
     })
 
     // 当用户请求/api/1/u/signup，就会命中这条规则，会调用User.signup方法，并返回User.signup的返回值
-    router.get('/u/signup', User.signup)
+    router.post('/u/signup', User.signup)
 
     router.post('/u/verify', User.verify)
     router.post('/u/update', User.update)

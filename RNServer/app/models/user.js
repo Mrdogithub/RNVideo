@@ -10,6 +10,10 @@ var userschema = new mongoose.Schema({
     },
     areaCode: String,
     verifyCode: String,
+    verified: {
+        type: Boolean,
+        default: false
+    },
     accessToken: String,
     nickName: String,
     gender: String,
