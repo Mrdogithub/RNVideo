@@ -9,8 +9,9 @@ exports.signature = function *(next) {
 
 exports.hasBody = function *(next) { // 创建中间件
     var body = this.request.body || {}
-
-    if(Object.keys(body.length === 0)) {
+    console.log(1,body)
+    console.log(Object.keys(body).length + 'Object.keys(body).length')
+    if(Object.keys(body).length === 0) {
         this.body = {
             'success': false,
             'err': '数据丢失'

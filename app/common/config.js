@@ -9,12 +9,14 @@ module.exports = {
         }
     },
     api: {
-        base: 'https://rapapi.org/mockjs/32229',
+        // base: 'https://rapapi.org/mockjs/32229',
+        base: 'http://localhost:1234',
         creations: '/api/creations',
-        up: '/aip/up',
+        up: '/api/up',
         comment: '/api/comments',
-        signup: '/api/user/signup',
-        verify: '/api/user/verify'
+        signup: '/api/u/signup',
+        verify: '/api/u/verify',
+        signature: '/api/u/signature'
     }
 }
 

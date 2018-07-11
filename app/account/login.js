@@ -33,6 +33,7 @@ var Login = React.createClass({
         var signupUrl = Config.api.base + Config.api.signup;
 
         Request.post(signupUrl, body).then((data) => {
+                console.log(1, data)
                 if(data && data.success) {
                     _that._showVerifycode()
                 }
@@ -60,12 +61,14 @@ var Login = React.createClass({
         }
 
         var body = {
-            phoneNumber:phoneNumber,
-            verifyCode: verifyCode
+            'phoneNumber':phoneNumber,
+            'verifyCode': verifyCode
         }
         
         var signupUrl = Config.api.base + Config.api.verify;
+        console.log('form data:' + body)
         Request.post(signupUrl, body).then((data) => {
+               console.log(1,data)
                 if(data && data.success) {
                     //登陆成功之后，将用户状态通知给上层组件
                     _that.props.afterLogin(data.data)
