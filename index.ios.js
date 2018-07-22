@@ -47,6 +47,13 @@ var myFunReactNative = React.createClass({
   componentDidMount() {
     this._asyncAppStatus()
   },
+  _logout() {
+    AsyncStorage.removeItem('user')
+    this.setState({
+      logined: false,
+      user: null
+    })
+  },
   _asyncAppStatus() {
     var that = this
     console.log('get user')
@@ -134,7 +141,7 @@ var myFunReactNative = React.createClass({
               selectedTab: 'greenTab'
             });
           }}>
-          <Account/>
+          <Account logout = {this._logout} user = {this.state.user}/>
         </IonIcons.TabBarItem>
       </TabBarIOS>
     );

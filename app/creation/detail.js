@@ -399,10 +399,7 @@ var Detail = React.createClass({
 					showsVerticalScrollIndicator = {false}
 					automaticallyAdjustContentInsets = {false}
 					/>
-				 <Modal
-				 	animattionType = {'fade'} // modal 弹出的动画形式
-					 visible = {this.state.modalVisible} // 默认状态下是否可见
-					 onRequestClose = {() => {this._setModalVisible(false)}}>
+				 <Modal visible = {this.state.modalVisible}>
 					<View style = {styles.modalContainer}>
 						<IonIcons
 							onPress = {this._closeModal}
