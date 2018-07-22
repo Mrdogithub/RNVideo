@@ -1,9 +1,38 @@
 'use strict'
 var mongoose = require('mongoose')
 var User = mongoose.model('User')
+var config = require('../../config/config.js')
+var sha1 = require('sha1')
 exports.signature = function *(next) {
+
+	var body = this.request.body
+	var type = body.type
+	var timestamp = body.timestamp
+	var folder
+	var tags
+
+	if (type === 'avatar') {
+		folder = 'avatar'
+		tags = 'app,avatar'
+	}
+
+	if (type === 'video') {
+		folder = 'video'
+		tags = 'app,video'
+	}
+
+	if (type === 'audio') {
+		folder = 'audio'
+		tags = 'app,audio'
+	}
+
+	var signature = 'folder=' + folder + '&tags=' + tags + '&timestamp=' + timestamp + config.CLOUDINARY.api_secret
+    signature = sha1(signature)
+
+    // 将加密后的签名值返回给客户端，客户端利用服务器端返回的签名值来上传图片
     this.body = {
-        'success': true
+        'success': true,
+        'data': signature
     }
 }
 

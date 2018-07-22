@@ -133,7 +133,4 @@ exports.update = function *(next) {
             _id: user._id
         }
     }
-    this.body = {
-        'success': true
-    }
 }
