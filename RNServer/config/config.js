@@ -1,6 +1,11 @@
 'use strict'
 
 module.exports = {
+	qiniu: {
+		video: 'http://video.iblack7.com',
+		AK: '',
+		SK: ''
+	},
 	CLOUDINARY: {
 	'base': 'https://res.cloudinary.com/dsf3opwhl',
 	'image': 'https://api.cloudinary.com/v1_1/dsf3opwhl/image/upload',

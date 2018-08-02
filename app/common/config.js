@@ -17,7 +17,8 @@ module.exports = {
         signup: '/api/u/signup',
         verify: '/api/u/verify',
         update: '/api/u/update',
-        signature: '/api/u/signature'
+        signature: '/api/u/signature',
+        video: '/api/creations/video'
     }
 }
 

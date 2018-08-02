@@ -6,6 +6,7 @@
     "start": "node node_modules/react-native/local-cli/cli.js start"
   },
   "dependencies": {
+    "cloudinary": "^1.11.0",
     "lodash": "^4.17.5",
     "mockjs": "^1.0.1-beta3",
     "query-string": "^5.1.0",

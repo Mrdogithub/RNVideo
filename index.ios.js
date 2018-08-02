@@ -29,7 +29,7 @@ var myFunReactNative = React.createClass({
   displayName: 'myFunReactNative',
   getInitialState () {
     return {
-      selectedTab: 'blueTab',
+      selectedTab: 'Edit',
       isLogin: false,
       user:null
     };
@@ -96,10 +96,10 @@ var myFunReactNative = React.createClass({
         <IonIcons.TabBarItem
           iconName="ios-videocam-outline"
           selectedIconName="ios-videocam"
-          selected={this.state.selectedTab === "blueTab"}
+          selected={this.state.selectedTab === "List"}
           onPress={() => {
             this.setState({
-              selectedTab: 'blueTab'
+              selectedTab: 'List'
             });
           }}>
         <Navigator
@@ -124,21 +124,21 @@ var myFunReactNative = React.createClass({
           iconName="ios-recording-outline"
           systemIcon="history"
           selectedIconName="ios-recording"
-          selected={this.state.selectedTab === "redTab"}
+          selected={this.state.selectedTab === "Edit"}
           onPress={() => {
             this.setState({
-              selectedTab: 'redTab'
+              selectedTab: 'Edit'
             });
           }}>
-		      <Edit />
+		      <Edit  user = {this.state.user}/>
         </IonIcons.TabBarItem>
         <IonIcons.TabBarItem
           iconName="ios-more-outline"
           selectedIconName="ios-more"
-          selected={this.state.selectedTab === "greenTab"}
+          selected={this.state.selectedTab === "Account"}
           onPress={() => {
             this.setState({
-              selectedTab: 'greenTab'
+              selectedTab: 'Account'
             });
           }}>
           <Account logout = {this._logout} user = {this.state.user}/>

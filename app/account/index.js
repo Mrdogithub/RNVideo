@@ -48,7 +48,7 @@ var Account = React.createClass({
 			user: user,
 			avatarProgress: 0,
 			avatarUploading: false,
-			modalVisible: false
+			modalVisible: false,
 		}
 	},
 	componentDidMount(){
@@ -90,7 +90,7 @@ var Account = React.createClass({
 			//   path: 'images'
 			// }
 		  };
-		console.log(1, options)
+
 		ImagePicker.showImagePicker(options, (response) => {
 			var that = this
 			console.log('avatarData:' +response)

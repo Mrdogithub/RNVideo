@@ -53,7 +53,7 @@ var Detail = React.createClass({
 			// video 播放器
 			rate: 1,
 			muted: true,
-			resizeMode: 'cover',			
+			resizeMode: 'contain',			
 			repeat: false,
 
 			//modal
@@ -79,8 +79,6 @@ var Detail = React.createClass({
 			creation: '123',
 			page: page
         }).then((data) => {
-			console.log("hi data")
-			console.log(1,data)
             // 通过mockjs ，解析rap返回的数据
             if (data.success) {
                 // clone 当前数据
@@ -100,7 +98,6 @@ var Detail = React.createClass({
             }
         })
         .catch((error) => {
-			console.log(1,error)
 			this.setState({
 				isLoadingTail: false
 			})
@@ -108,7 +105,6 @@ var Detail = React.createClass({
     },
     _hasMore () {
 		// 将当前数据的长度 与 数据总长度进行比较,确定是否有更多数据
-		console.log(cachedResult.items.length + ": " + cachedResult.total)
         return cachedResult.items.length !== cachedResult.total
     },
     _fetchMoreData () {
