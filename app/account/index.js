@@ -21,14 +21,7 @@ import {
 } from 'react-native';
 var width = Dimensions.get('window').width
 
-var CLOUDINARY = {
-	'base': 'https://res.cloudinary.com/dsf3opwhl',
-	'image': 'https://api.cloudinary.com/v1_1/dsf3opwhl/image/upload',
-	'video': 'https://api.cloudinary.com/v1_1/dsf3opwhl/video/upload',
-	'audio': 'https://api.cloudinary.com/v1_1/dsf3opwhl/raw/upload',
-	'cloud_name': 'dsf3opwhl',
-	'api_key': '742529175474162'
-}
+
 
 function avatar(id, type) {
 	if (id.indexOf('http') > -1) {
@@ -39,7 +32,12 @@ function avatar(id, type) {
 		return id
 	}
 
-	return CLOUDINARY.base + '/' + type + '/upload/' + id
+	if (id.indexOf('avatar/') > -1) {
+		return config.cloudinary.base + '/' + type + '/upload/' + id
+	}
+
+	return 'http://pcvdaisr8.bkt.clouddn.com/' + id
+
 }
 var Account = React.createClass({
 	getInitialState(){
@@ -68,6 +66,16 @@ var Account = React.createClass({
 					})
 				}
 			})
+	},
+	_getQiniuTOken() {
+		var accessToken = this.state.user.accessToken
+		var signatureUrl = config.api.base + config.api.signature
+		return request.post(signatureUrl,{
+			accessToken: accessToken,
+			cloud: 'qiniu'
+		}).catch((err)=> {
+			console.log(err)
+		})
 	},
 	_pickPhoto(){
 		var options = {
@@ -108,35 +116,22 @@ var Account = React.createClass({
 			// that.setState({ user: user }) // 更新user 状态
 			
 
-			// 构造cloudinary 参数列表
-			var timestamp = Date.now()
 			// 签名如果在本地做， 显然会把serict暴露给外界，这样不安全，所以理论上应该在
 			// 服务器端完成。 前端需要请求服务器来生成一个签名。
-			var tags = 'app,avatar'
-			var folder = 'avatar'
-			var signatureUrl = config.api.base + config.api.signature
-			var accessToken = this.state.user.accessToken
-			request.post(signatureUrl,{
-				accessToken: accessToken,
-				timestamp: timestamp,
-				type: 'avatar',
-				folder: folder,
-				tags: tags
-			}).then((data) => {
+			
+			var uri = response.uri
+			that._getQiniuTOken().then((data)=>{
 				if (data && data.success) {
-
-					var signature = data.data
-
-					var body  = new FormData()
-					body.append('folder', folder)
-					// body.append('signature', signature)
-					body.append('tags', tags)
-					body.append('signature', signature)
-					body.append('api_key', CLOUDINARY.api_key)
-					body.append('resource_type', 'image')
-					body.append('file', avatarData)
-					body.append('timestamp', timestamp)
-
+					var token = data.data.token
+					var key = data.data.key
+					var body = new FormData()
+					body.append('token', token)
+					body.append('key', key)
+					body.append('file', {
+						type: 'image/jpeg',
+						uri: uri,
+						name: key
+					})
 					that._upload(body)
 				}
 			})
@@ -147,7 +142,7 @@ var Account = React.createClass({
 		var that = this
 		//构建一个异步接口并生成一个实例
 		var xhr = new XMLHttpRequest()
-		var url = CLOUDINARY.image
+		var url = config.qiniu.upload
 		that.setState({
 			avatarProgress: 0,
 			avatarUploading: true
@@ -155,6 +150,7 @@ var Account = React.createClass({
 		xhr.open('POST', url)
 
 		xhr.onload = () => {
+			console.log(1, response)
 			if (xhr.status !== 200) {
 				AlertIOS.alert('请求失败')
 				return
@@ -170,22 +166,22 @@ var Account = React.createClass({
 			} catch (e){
 				console.log('parse fail')
 			}
-
+			
 			// 如果存在public_id 说明图片已经上传完毕
-			if (response && response.public_id) {
+			if (response) {
 				var user = that.state.user
-				// 生成图片的标准地址
-				console.log('response.public_id')
-				console.log(1, response)
-				user.avatar = 'v' + response.version + '/' + response.public_id
+				if (response.public_id) {
+					user.avatar = 'v' + response.version + '/' + response.public_id
+				}
 
+				if (response.key) {
+					user.avatar = response.key
+				}
 				that.setState({
 					user: user,
 					avatarProgress: 0,
 					avatarUploading: false
 				})
-				
-				// 将更改后的图片地址保存到服务器端
 				that._asyncUser(true)
 			}
 		}

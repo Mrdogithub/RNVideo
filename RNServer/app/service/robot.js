@@ -10,34 +10,51 @@ var config = require('../../config/config')
 qiniu.conf.ACCESS_KEY = config.qiniu.AK
 qiniu.conf.SECRET_KEY = config.qiniu.SK
 
-cloudinary.config(config.cloudinary)
+cloudinary.config(config.CLOUDINARY)
+var bucket = 'myproudct'
+function upToken(bucket, key) {
+    var putPolicy = new qiniu.rs.PutPolicy({scope: bucket + ':' + key})
+    var mac = new qiniu.auth.digest.Mac(qiniu.conf.ACCESS_KEY , qiniu.conf.SECRET_KEY);
+    return putPolicy.uploadToken(mac)
+}
+exports.getQiniuToken = function(key) { // 获取qiniu 签名
+    var token = upToken(bucket, key)
+    return token
+    // var type = body.type
+    // var key = uuid.v4()
+    // var putPolicy
+    // var options = {
+    //     persistentNotifyUrl: config.notify
+    // }
 
-exports.getQiniuToken = function(body) {
+    // if (type === 'avatar') {
+    //     key += '.jpeg'
+    //     putPolicy = new qiniu.rs.PutPolicy('gougouavatar:' + key)
+    // }
+
+}
+
+exports.getCloundinaryToken = function(body) { // 获取cloundinary 签名
     var type = body.type
-    var key = uuid.v4()
-    var putPolicy
-    var options = {
-        persistentNotifyUrl: config.notify
-    }
-
+	var timestamp = body.timestamp
+	var folder 
+    var tags
     if (type === 'avatar') {
-        key += '.jpeg'
-        putPolicy = new qiniu.rs.PutPolicy('gougouavatar:' + key)
-    }
+		folder = 'avatar'
+		tags = 'app,avatar'
+	}
 
+	if (type === 'video') {
+		folder = 'video'
+		tags = 'app,video'
+	}
+
+	if (type === 'audio') {
+		folder = 'audio'
+		tags = 'app,audio'
+	}
+
+	var signature = 'folder=' + folder + '&tags=' + tags + '&timestamp=' + timestamp + config.CLOUDINARY.api_secret
+    signature = sha1(signature)
 }
 
-exports.uploadToCloudinary = function(url) {
-    return new Promise(function(resolve, reject){
-        cloudinary.uploader.upload(url, function(result){
-            if (result && result.public_id) {
-                resolve(result)
-            } else {
-                reject(result)
-            }
-        }, {
-            resource_type: 'video',
-            folder: 'video'
-        })
-    })
-}

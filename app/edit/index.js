@@ -5,7 +5,6 @@ var config = require('../common/config.js')
 var request = require('../common/request.js')
 var width = Dimensions.get('window').width
 var height = Dimensions.get('window').height
-var cloudinary = require('cloudinary')
 var CLOUDINARY = {
 	'base': 'https://res.cloudinary.com/dsf3opwhl',
 	'image': 'https://api.cloudinary.com/v1_1/dsf3opwhl/image/upload',

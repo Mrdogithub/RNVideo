@@ -12,10 +12,10 @@ var videoschema = new Schema({
     qinniu_key: String,
     persistentId: String,
     qiniu_final_key: String,
-    qiniu_detail: Mixed,
+    qiniu_detail: String,
 
     public_id: String,
-    detail: Mixed,
+    detail: String,
     meta: {
         createAt:{
             type: Date,
@@ -41,4 +41,4 @@ videoschema.pre('save', function(next){
 // 第一个参数是数据控用户表的表名，第二个参数是创建用户的字段约定
 
 // 5.导出
-module.exports = mongoose.model('video', videoschema)
+module.exports = mongoose.model('Video', videoschema)

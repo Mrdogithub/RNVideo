@@ -3,8 +3,8 @@
 module.exports = {
 	qiniu: {
 		video: 'http://video.iblack7.com',
-		AK: '',
-		SK: ''
+		AK: 'rHDtsfy3UdaEioPL3e0ffeTR1EzeT_bNNu14f_DH',
+		SK: 'B9xjQT6ptX_co34IsCOcR9ni7B3oeaUPSkiltCBS'
 	},
 	CLOUDINARY: {
 	'base': 'https://res.cloudinary.com/dsf3opwhl',

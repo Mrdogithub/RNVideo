@@ -1,10 +1,10 @@
 'use strict'
 var mongoose = require('mongoose')
-var User = mongoose.model('Video')
+var Video = mongoose.model('Video')
 var config = require('../../config/config.js')
 var robot = require('../service/robot')
 
-exports.vido = function *(next) {
+exports.video = function *(next) {
     var body = this.request.body
     var videoData = body.video
     var user = this.session.user
