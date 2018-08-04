@@ -17,21 +17,37 @@ function upToken(bucket, key) {
     var mac = new qiniu.auth.digest.Mac(qiniu.conf.ACCESS_KEY , qiniu.conf.SECRET_KEY);
     return putPolicy.uploadToken(mac)
 }
-exports.getQiniuToken = function(key) { // 获取qiniu 签名
-    var token = upToken(bucket, key)
-    return token
-    // var type = body.type
-    // var key = uuid.v4()
-    // var putPolicy
-    // var options = {
-    //     persistentNotifyUrl: config.notify
-    // }
+exports.getQiniuToken = function(body) { // 获取qiniu 签名
+    var mac = new qiniu.auth.digest.Mac(qiniu.conf.ACCESS_KEY , qiniu.conf.SECRET_KEY);
+    var type = body.type
+    var key = uuid.v4()
+    var putPolicy
+    var options = {
+        persistentNotifyUrl: config.notify //进行转码操作的url
+    }
+    var options = {
+        persistentNotifyUrl: config.notify
+    }
 
-    // if (type === 'avatar') {
-    //     key += '.jpeg'
-    //     putPolicy = new qiniu.rs.PutPolicy('gougouavatar:' + key)
-    // }
+    if (type === 'avatar') {
+        key += '.jpeg'
+        putPolicy = new qiniu.rs.PutPolicy({scope: bucket + ':' + key})
+    }
+    else if (type === 'video') {
+        key +='.mp4'
+        options.scope = 'gogovideo:' + key
+        options.persistentOps = 'avthumb/mp4/an/1'
+        putPolicy = new qiniu.rs.PutPolicy(options)
+    }
+    else if (type === 'audio') {
 
+    }
+    var token =  putPolicy.uploadToken(mac)
+
+    return {
+        key: key,
+        token: token
+    }
 }
 
 exports.getCloundinaryToken = function(body) { // 获取cloundinary 签名

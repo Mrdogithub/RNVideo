@@ -72,7 +72,8 @@ var Account = React.createClass({
 		var signatureUrl = config.api.base + config.api.signature
 		return request.post(signatureUrl,{
 			accessToken: accessToken,
-			cloud: 'qiniu'
+			cloud: 'qiniu',
+			type: 'avatar'
 		}).catch((err)=> {
 			console.log(err)
 		})
@@ -160,7 +161,8 @@ var Account = React.createClass({
 				return	
 			}
 			var response
-
+			console.log('response:')
+			console.log(1,response)
 			try {
 				response = JSON.parse(xhr.response)
 			} catch (e){

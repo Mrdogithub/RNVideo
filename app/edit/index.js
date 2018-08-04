@@ -23,6 +23,7 @@ import {
   AlertIOS,
   TouchableOpacity,
   ProgressViewIOS,
+  AsyncStorage,
   Dimensions
 } from 'react-native';
 
@@ -47,10 +48,39 @@ var Edit = React.createClass({
 
 			// video player
 			rate: 1,
-			muted: true,
+			muted: true, // 将视屏设置成静音
 			resizeMode: 'contain',			
 			repeat: false,
 		}
+	},
+	componentDidMount(){
+		var that = this;
+		// 从存储在asyncstorage中的用户信息中获取用户头像
+		AsyncStorage.getItem('user') //异步读取用户信息，如果存在用户信息，更新用户状态
+			.then((data)=>{
+				var user
+				if (data) {
+					user = JSON.parse(data)
+				}
+				user.avatar = '';
+				AsyncStorage.setItem('user',JSON.stringify(user))
+				if(user && user.accessToken) {
+					that.setState({ //更新用户信息状态，接着会第二次触发render，进行模版的视图更新
+						user:user
+					})
+				}
+			})
+	},
+	_getQiniuTOken() {
+		var accessToken = this.state.user.accessToken
+		var signatureUrl = config.api.base + config.api.signature // 构建签名地址
+		return request.post(signatureUrl,{
+			accessToken: accessToken,
+			cloud: 'qiniu',
+			type: 'video'
+		}).catch((err)=> {
+			console.log(err)
+		})
 	},
 	_pickVideo(){
 		var options = {
@@ -68,83 +98,73 @@ var Edit = React.createClass({
 			videoQuality: 'medium',
 			mediaType: 'video',
 			durationLimit: 10,
-			// noData: false,
-
+			noData: false,
 			// quality:0.75,
 			// allowsEditing:true,
 			// noData: false,
 			storageOptions: { 
 			  skipBackup: true, 
-			  path: 'video'
+			  path: 'images'
 			}
 		  };
+
 		ImagePicker.showImagePicker(options, (response) => {
 			var that = this
-			console.log('------------')
-			console.log(1, response)
-			console.log('------------')
+			console.log('avatarData:' +response)
 			if (response.didCancel) {
 				return 
 			}
 			if (response.error) {
 				console.log('response error:'+response.error)
 			}
+			//reponse 返回的是从手机中选取的图片数据，默认是base64格式
+	
+			// var user = that.state.user
+			// user.avatar = avatarData // 更新用户数据
+			// that.setState({ user: user }) // 更新user 状态
+			
 
-			var videoData = response.uri
-			var uri = response.uri;
+			// 签名如果在本地做， 显然会把serict暴露给外界，这样不安全，所以理论上应该在
+			// 服务器端完成。 前端需要请求服务器来生成一个签名。
+			
+			var uri = response.uri
 			that.setState({
 				previewVideo: uri
 			})
-			var timestamp = Date.now()
-			var tags = 'app,video'
-			var folder = 'video'
-			var signatureUrl = config.api.base + config.api.signature
-			var accessToken = this.state.user.accessToken
-			request.post(signatureUrl,{
-				accessToken: accessToken,
-				timestamp: timestamp,
-				type: 'video',
-				folder: folder,
-				tags: tags
-			}).then((data) => {
+			that._getQiniuTOken().then((data)=>{
 				if (data && data.success) {
-					
-					var signature = data.data
-					console.log(' data.data')
-					console.log(1,  data)
-					var body  = new FormData()
-					body.append('folder', folder)
-					// body.append('signature', signature)
-					body.append('tags', tags)
-					body.append('signature', signature)
-					body.append('api_key', CLOUDINARY.api_key)
-					body.append('resource_type', 'video')
-					body.append('uri', videoData)
-					body.append('file', '')
-					body.append('timestamp', timestamp)
-
+					var token = data.data.token
+					var key = data.data.key
+					var body = new FormData()
+					console.log('getQiniuResponse')
+					console.log(1,data)
+					body.append('token', token)
+					body.append('key', key)
+					body.append('file', {
+						type: 'video/mp4',
+						uri: uri,
+						name: key
+					})
 					that._upload(body)
 				}
 			})
 		})
 	},
 	_upload (body) {
-
+		// _upload 方法实现了对视屏上传进度的监控, 包括上传前和上传后的管理
 		var that = this
 		//构建一个异步接口并生成一个实例
 		var xhr = new XMLHttpRequest()
-		var url = CLOUDINARY.video
+		var url = config.qiniu.upload
+        console.log('url:' + url)
 		that.setState({
 			videoUploadedProgress: 0,
-			videoUploading: true,
-			videoUploaded: false
+			videoUploading: true, // 正在上传中
+			videoUploaded: false // 已经上传结束
 		})
-		console.log('url'+ url)
 		xhr.open('POST', url)
-
+	
 		xhr.onload = () => {
-			console.log('xhr')
-			console.log(1, xhr)
 			if (xhr.status !== 200) {
 				AlertIOS.alert('请求失败')
 				return
@@ -154,29 +174,21 @@ var Edit = React.createClass({
 				return	
 			}
 			var response
-
+			console.log('xhr response:')
+			console.log(1, xhr)
 			try {
 				response = JSON.parse(xhr.response)
 			} catch (e){
 				console.log('parse fail')
 			}
-
+	
 			// 如果存在public_id 说明图片已经上传完毕
-			if (response && response.public_id) {
+			if (response) {
+				
 				that.setState({
 					video: response,
-					videoUploading: false,
-					videoUploaded: true
-				})
-
-				var videoURL = config.api.base + config.api.video
-				var accessToken = this.state.user.accessToken
-				request.post(videoURL, {
-					accessToken: accessToken,
-					video: response
-				})
-				.catch((err)=> {
-					AlertIOS.alert('视屏同步出错，请上传')
+					videoUploading: false, // 正在上传中
+					videoUploaded: true // 已经上传结束
 				})
 			}
 		}
@@ -192,33 +204,6 @@ var Edit = React.createClass({
 			}
 		}
 		xhr.send(body)
-	},
-	_asyncUser (isAvatar) {
-		var that = this
-		// 获取当前状态的user （替换完头像之后的user）
-		var user = that.state.user
-
-		if (user.accessToken && user) { // 判断用户是否合法
-			var url = config.api.base + config.api.update
-			console.log('before update')
-			console.log(1, user)
-			request.post(url, user)
-				.then((data) => {
-					if (data && data.success) {
-						console.log(1, data)
-						var user  = data.data
-						if (isAvatar) {
-							AlertIOS.alert('更新头像成功！')
-						}
-						that.setState({
-							user: user
-						}, function() {
-							that._close()
-							AsyncStorage.setItem('user', JSON.stringify(user))
-						})
-					}
-				})
-		}
 	},
 	_onLoad () {
 	},
@@ -321,7 +306,7 @@ var Edit = React.createClass({
 							!this.state.videoUploaded && this.state.videoUploading
 							? <View style={styles.progressTipBox}>
 								<ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoUploadedProgress}/>
-								<Text style={styles.progressTip}>正在生成静音视屏,已完成{(this.state.videoUploadedProgress * 100).toFixed(2)}</Text>
+								<Text style={styles.progressTip}>正在生成静音视屏,已完成{(this.state.videoUploadedProgress * 100).toFixed(2)} %</Text>
 							</View>
 							:null
 						}

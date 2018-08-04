@@ -11,7 +11,10 @@ exports.signature = function *(next) {
 
     if (cloud === 'qiniu') {
         key = uuid.v4() + '.jpeg'
-        token = robot.getQiniuToken(key)
+        var data = robot.getQiniuToken(body)
+        
+        token = data.token
+        key = data.key
     }
     else {
         token = robot.getCloudinaryToken(body)
