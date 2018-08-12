@@ -17,6 +17,24 @@ function upToken(bucket, key) {
     var mac = new qiniu.auth.digest.Mac(qiniu.conf.ACCESS_KEY , qiniu.conf.SECRET_KEY);
     return putPolicy.uploadToken(mac)
 }
+
+exports.uploadToCloudinary = function(url) {
+    return new Promise(function(resolve,reject) {
+        cloudinary.uploader.upload(url, function(result){
+            console.log('result ---- robot')
+            console.log(1, result)
+            console.log('----ok')
+            if (result && result.public_id) {
+                resolve(result)
+            }
+            else {
+                reject(result)
+            }
+        }, {
+            resource_type: 'video'
+        })
+    })  
+}
 exports.getQiniuToken = function(body) { // 获取qiniu 签名
     var mac = new qiniu.auth.digest.Mac(qiniu.conf.ACCESS_KEY , qiniu.conf.SECRET_KEY);
     var type = body.type
@@ -34,8 +52,8 @@ exports.getQiniuToken = function(body) { // 获取qiniu 签名
         putPolicy = new qiniu.rs.PutPolicy({scope: bucket + ':' + key})
     }
     else if (type === 'video') {
-        key +='.mp4'
-        options.scope = 'gogovideo:' + key
+        key += '.mp4'
+        options.scope = 'myproudct:' + key
         options.persistentOps = 'avthumb/mp4/an/1'
         putPolicy = new qiniu.rs.PutPolicy(options)
     }

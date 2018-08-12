@@ -2,7 +2,7 @@
 
 module.exports = {
 	qiniu: {
-		video: 'http://video.iblack7.com',
+		video: 'http://pcvdaisr8.bkt.clouddn.com',
 		AK: 'rHDtsfy3UdaEioPL3e0ffeTR1EzeT_bNNu14f_DH',
 		SK: 'B9xjQT6ptX_co34IsCOcR9ni7B3oeaUPSkiltCBS'
 	},

@@ -13,7 +13,8 @@ var CLOUDINARY = {
 	'cloud_name': 'dsf3opwhl',
 	'api_key': '742529175474162'
 }
-
+import {CountDownText} from 'react-native-sk-countdown'
+var IonIcons = require('react-native-vector-icons/Ionicons')
 import React, { Component } from 'react';
 import {
   StyleSheet,
@@ -43,14 +44,18 @@ var Edit = React.createClass({
 			// video loads
 			videoTotal:0,
 			currentTime:0,
-			playing: false,
-			paused: false,
 
 			// video player
 			rate: 1,
 			muted: true, // 将视屏设置成静音
 			resizeMode: 'contain',			
 			repeat: false,
+			
+			// count down
+			counting: false,
+			recording: false
+
+
 		}
 	},
 	componentDidMount(){
@@ -156,7 +161,7 @@ var Edit = React.createClass({
 		//构建一个异步接口并生成一个实例
 		var xhr = new XMLHttpRequest()
 		var url = config.qiniu.upload
-        console.log('url:' + url)
+
 		that.setState({
 			videoUploadedProgress: 0,
 			videoUploading: true, // 正在上传中
@@ -164,7 +169,8 @@ var Edit = React.createClass({
 		})
 		xhr.open('POST', url)
 	
-		xhr.onload = () => {
+		xhr.onload = function() {
+
 			if (xhr.status !== 200) {
 				AlertIOS.alert('请求失败')
 				return
@@ -173,22 +179,40 @@ var Edit = React.createClass({
 				AlertIOS.alert('请求失败')
 				return	
 			}
-			var response
-			console.log('xhr response:')
-			console.log(1, xhr)
+			var response 
+	
 			try {
 				response = JSON.parse(xhr.response)
 			} catch (e){
 				console.log('parse fail')
 			}
-	
+
 			// 如果存在public_id 说明图片已经上传完毕
 			if (response) {
-				
+			
 				that.setState({
 					video: response,
 					videoUploading: false, // 正在上传中
 					videoUploaded: true // 已经上传结束
+				})
+
+				var videoURL = config.api.base + config.api.video
+				var accessToken = that.state.user.accessToken
+
+				request.post(videoURL, {
+					accessToken: accessToken,
+					video: response
+				})
+				.catch((err) => {
+					console.log(err)
+					AlertIOS.alert('视屏同步错误，请重新上传')
+				})
+				.then((data) => {
+					console.log('视屏同步')
+					console.log(data)
+					if (!data || !data.success) {
+						AlertIOS.alert('视屏同步出错，重新上传')
+					}
 				})
 			}
 		}
@@ -208,36 +232,24 @@ var Edit = React.createClass({
 	_onLoad () {
 	},
 	_onProgress (data) {
-		if (!this.state.videoLoaded) {
-			this.setState({
-				videoLoaded: true,
-				playing: true
-			})
-		}
+
 		var duration = data.playableDuration
 		var currentTime = data.currentTime
 		var percent = Number( (currentTime / duration).toFixed(2))
-		
-		var newState = {
+
+		this.setState({
 			videoTotal: duration,
 			currentTime: Number( (currentTime / duration).toFixed(2)),
 			videoProgress: percent
-		}
-
-		if(!this.state.videoLoaded) { // 当视屏开始播放的时候，更新loaded状态，即：加载完毕
-			newState.videoLoaded = true
-		}
-
-		if(!this.state.playing) { // 当视屏开始播放的时候，更新loaded状态，即：正在播放
-			newState.playing = true
-		}
-		this.setState(newState)
+		})
 	},
 	_onEnd () {
-		this.setState({
-			videoProgress: 1,
-			playing: false
-		})
+		if (this.state.recording) {
+			this.setState({
+				videoProgress: 1,
+				recording: false
+			})
+		}
 	},
 	_onError (e) {
 		this.setState({
@@ -260,6 +272,24 @@ var Edit = React.createClass({
 				paused: false
 			})
 		}
+	},
+	_counting () {
+		if (!this.state.counting && !this.state.recording) {			
+			this.setState({
+				counting: true
+			})
+		}
+
+		this.refs.videoPlayer.seek(this.state.videoTotal - 0.01)
+	},
+	_record () {
+		this.setState({
+			videoProgress: 0, // 每次录制的时候都是重新开始录制
+			recording: true,
+			counting: false
+		})
+
+		this.refs.videoPlayer.seek(0)
 	},
     render () {
       return (
@@ -310,6 +340,14 @@ var Edit = React.createClass({
 							</View>
 							:null
 						}
+						{
+							this.state.recording
+							?<View style={styles.progressTipBox}>
+								<ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress}/>
+								<Text style={styles.progressTip}>录制声音中</Text>
+							</View>
+							:null
+						}
 					</View>
 				</View>
 				: <TouchableOpacity style={styles.uploadContainer} onPress={this._pickVideo}>
@@ -319,6 +357,32 @@ var Edit = React.createClass({
 						<Text style={styles.uploadDesc}>建议时长不超过20秒</Text>
 					</View>
 				</TouchableOpacity>
+			}
+			{
+				this.state.videoUploaded
+				?   <View style = {styles.recordBox}>
+						<View style = {[styles.recordIconBox,this.state.recording && styles.recordOn]}>
+						{
+							this.state.counting && !this.state.recording
+							?   <CountDownText style={styles.countBtn} 
+										countType='seconds' // 计时类型：seconds / date
+										auto={true} // 自动开始
+										afterEnd={this._record} // 结束回调
+										timeLeft={3} // 正向计时 时间起点为0秒
+										step={-1} // 计时步长，以秒为单位，正数则为正计时，负数为倒计时
+										startText='准备录制' // 开始的文本
+										endText='Go' // 结束的文本
+										intervalText={(sec) => {
+											return sec === 0 ? 'Go' : sec
+										}} // 定时的文本回调
+										/>
+							: 	<TouchableOpacity onPress = {this._counting}>
+									<IonIcons name = 'ios-mic' style = {styles.recordIcon}/>
+								</TouchableOpacity>
+						}
+						</View>
+					</View>
+				: null
 			}
 		  </View>
         </View>
@@ -417,6 +481,35 @@ var styles = StyleSheet.create({
 	},
 	progressBar: {
 		width: width
+	},
+	recordBox: {
+		width: width,
+		height: 60,
+		alignItems: 'center'	
+	},
+	recordIconBox: {
+		width: 68,
+		height: 68,
+		borderRadius: 34,
+		backgroundColor: '#ee735c',
+		borderWidth: 1,
+		marginTop: -30,
+		borderColor: '#fff',
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	recordIcon: {
+		fontSize: 58,
+		backgroundColor: 'transparent',
+		color: '#fff'
+	},
+	countBtn: {
+		fontSize: 32,
+		fontWeight: '600',
+		color: '#fff'
+	},
+	recordOn: {
+		backgroundColor: '#ccc'
 	}
 });
 
