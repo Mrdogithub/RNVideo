@@ -14,6 +14,7 @@ var CLOUDINARY = {
 	'api_key': '742529175474162'
 }
 import {CountDownText} from 'react-native-sk-countdown'
+import {AudioRecorder, AudioUtils} from 'react-native-audio'
 var IonIcons = require('react-native-vector-icons/Ionicons')
 import React, { Component } from 'react';
 import {
@@ -25,7 +26,8 @@ import {
   TouchableOpacity,
   ProgressViewIOS,
   AsyncStorage,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 
 var Edit = React.createClass({
@@ -53,10 +55,30 @@ var Edit = React.createClass({
 			
 			// count down
 			counting: false,
-			recording: false
+			recording: false,
 
-
+			// audio
+			audioName: 'rn'
 		}
+	},
+	_initAudio() {
+		let audioPath = AudioUtils.DocumentDirectoryPath + '/' + this.state.audioName
+	  
+		AudioRecorder.prepareRecordingAtPath(audioPath, {
+			SampleRate: 22050,
+			Channels: 1,
+			AudioQuality: "High",
+			AudioEncoding: "aac"
+		})
+        AudioRecorder.onProgress = (data) => {
+          this.setState({currentTime: Math.floor(data.currentTime)});
+        }
+
+        AudioRecorder.onFinished = (data) => {
+			if (Platform.OS === 'ios') {
+				this._finishRecording(data.status === "OK", data.audioFileURL, data.audioFileSize);
+			}
+        }
 	},
 	componentDidMount(){
 		var that = this;
@@ -75,6 +97,7 @@ var Edit = React.createClass({
 					})
 				}
 			})
+		this._initAudio()
 	},
 	_getQiniuTOken() {
 		var accessToken = this.state.user.accessToken
@@ -358,6 +381,7 @@ var Edit = React.createClass({
 					</View>
 				</TouchableOpacity>
 			}
+
 			{
 				this.state.videoUploaded
 				?   <View style = {styles.recordBox}>
