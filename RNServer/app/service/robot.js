@@ -68,7 +68,7 @@ exports.getQiniuToken = function(body) { // 获取qiniu 签名
     }
 }
 
-exports.getCloundinaryToken = function(body) { // 获取cloundinary 签名
+exports.getCloudinaryToken = function(body) { // 获取cloundinary 签名
     var type = body.type
 	var timestamp = body.timestamp
 	var folder 
@@ -86,9 +86,15 @@ exports.getCloundinaryToken = function(body) { // 获取cloundinary 签名
 	if (type === 'audio') {
 		folder = 'audio'
 		tags = 'app,audio'
-	}
+	} 
 
 	var signature = 'folder=' + folder + '&tags=' + tags + '&timestamp=' + timestamp + config.CLOUDINARY.api_secret
     signature = sha1(signature)
+    var key = uuid.v4()
+
+    return {
+        token: signature,
+        key: key
+    }
 }
 

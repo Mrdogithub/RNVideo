@@ -6,27 +6,20 @@ var uuid = require('uuid')
 exports.signature = function *(next) {
     var body = this.request.body
     var cloud = body.cloud
-    var token
-    var key
+    var data
 
     if (cloud === 'qiniu') {
-        key = uuid.v4() + '.jpeg'
-        var data = robot.getQiniuToken(body)
-        
-        token = data.token
-        key = data.key
+        // key = uuid.v4() + '.jpeg'
+        data = robot.getQiniuToken(body)
     }
     else {
-        token = robot.getCloudinaryToken(body)
+        data = robot.getCloudinaryToken(body)
     }
 
     // 将加密后的签名值返回给客户端，客户端利用服务器端返回的签名值来上传图片
     this.body = {
         'success': true,
-        'data': {
-            token: token,
-            key: key
-        }
+        'data': data
     }
 }
 
@@ -54,7 +47,7 @@ exports.hasToken = function *(next) { // 创建中间件
 
     if(!accessToken) {
         this.body = {
-            'success': true,
+            'success': false,
             'err': 'AccessToken 丢失'
         }
         return next

@@ -3,6 +3,8 @@ var ImagePicker = require('NativeModules').ImagePickerManager //获取照片管�
 var Video = require('react-native-video').default
 var config = require('../common/config.js')
 var request = require('../common/request.js')
+var Progress = require('react-native-progress')
+var _ = require('lodash')
 var width = Dimensions.get('window').width
 var height = Dimensions.get('window').height
 var CLOUDINARY = {
@@ -29,40 +31,81 @@ import {
   Dimensions,
   Platform
 } from 'react-native';
+var defaultState = {
+	previewVideo: null,
+	// video upload
+	video: null,
+	videoUploading:false,
+	videoUploaded: false,
+	videoUploadedProgress: 0.01,
 
+	// video loads
+	videoTotal:0,
+	currentTime:0,
+
+	// video player
+	rate: 1,
+	muted: true, // 将视屏设置成静音
+	resizeMode: 'contain',			
+	repeat: false,
+	
+	// count down
+	counting: false,
+	recording: false,
+
+
+	// audio
+	audio: null,
+	audioPath: AudioUtils.DocumentDirectoryPath + '/happy.aac',
+	audioPlaying: false,
+	recordDone: false,
+
+	audioUploading:false,
+	audioUploaded: false,
+	audioUploadedProgress: 0.01,
+}
 var Edit = React.createClass({
 	getInitialState(){
 		var user = this.props.user || {};
-		return {
-			previewVideo: null,
-			user: user,
-			// video upload
-			video: null,
-			videoLoaded: false,
-			videoUploading:false,
-			videoUploaded: false,
-			videoUploadedProgress: 0.01,
-
-			// video loads
-			videoTotal:0,
-			currentTime:0,
-
-			// video player
-			rate: 1,
-			muted: true, // 将视屏设置成静音
-			resizeMode: 'contain',			
-			repeat: false,
-			
-			// count down
-			counting: false,
-			recording: false,
-
-			// audio
-			audioName: 'rn'
-		}
+		var state = _.clone(defaultState)
+		state.user = user
+		return state
+	},
+	_uploadAudio() {
+		var that = this
+		var tags ='app,audio'
+		var folder = 'audio'
+		var timestamp = Date.now()
+		this._getToken({
+			type: 'audio',
+			timestamp: timestamp,
+			cloud: 'cloudinary'
+		})
+		.catch((err)=>{
+			console.log(err)
+		})
+		.then((data) => {  
+			if (data && data.success) {
+				var token = data.data.token
+				var key = data.data.key
+				var body = new FormData()
+				body.append('folder',folder)
+				body.append('signature', token)
+				body.append('tags', tags)
+				body.append('timestamp', timestamp)
+				body.append('api_key', config.cloudinary.api_key)
+				body.append('resource_type', 'video')
+				body.append('file', {
+					type: 'video/mp4',
+					uri: that.state.audioPath,
+					name: key
+				})
+				that._upload(body,'audio')
+			}
+		})
 	},
 	_initAudio() {
-		let audioPath = AudioUtils.DocumentDirectoryPath + '/' + this.state.audioName
+		let audioPath = this.state.audioPath
 	  
 		AudioRecorder.prepareRecordingAtPath(audioPath, {
 			SampleRate: 22050,
@@ -70,15 +113,15 @@ var Edit = React.createClass({
 			AudioQuality: "High",
 			AudioEncoding: "aac"
 		})
-        AudioRecorder.onProgress = (data) => {
+        AudioRecorder.onProgress =    (data) => {
           this.setState({currentTime: Math.floor(data.currentTime)});
         }
 
         AudioRecorder.onFinished = (data) => {
-			if (Platform.OS === 'ios') {
-				this._finishRecording(data.status === "OK", data.audioFileURL, data.audioFileSize);
-			}
-        }
+			this.setState({finished: data.finished})
+		}
+		
+		console.log('audioPath:' + audioPath)
 	},
 	componentDidMount(){
 		var that = this;
@@ -99,16 +142,12 @@ var Edit = React.createClass({
 			})
 		this._initAudio()
 	},
-	_getQiniuTOken() {
-		var accessToken = this.state.user.accessToken
+	_getToken(body) {
+		body['accessToken'] = this.state.user.accessToken
 		var signatureUrl = config.api.base + config.api.signature // 构建签名地址
-		return request.post(signatureUrl,{
-			accessToken: accessToken,
-			cloud: 'qiniu',
-			type: 'video'
-		}).catch((err)=> {
-			console.log(err)
-		})
+		console.log('_getToken')
+		console.log(1, body)
+		return request.post(signatureUrl,body)
 	},
 	_pickVideo(){
 		var options = {
@@ -145,22 +184,24 @@ var Edit = React.createClass({
 			if (response.error) {
 				console.log('response error:'+response.error)
 			}
-			//reponse 返回的是从手机中选取的图片数据，默认是base64格式
-	
-			// var user = that.state.user
-			// user.avatar = avatarData // 更新用户数据
-			// that.setState({ user: user }) // 更新user 状态
-			
 
-			// 签名如果在本地做， 显然会把serict暴露给外界，这样不安全，所以理论上应该在
-			// 服务器端完成。 前端需要请求服务器来生成一个签名。
-			
+			// 状态重置
+			var state = _.clone(defaultState)
 			var uri = response.uri
-			that.setState({
-				previewVideo: uri
+			state.previewVideo = uri
+			state.user = this.state.user
+			that.setState(state)
+			
+			that._getToken({
+				type: 'video',
+				cloud: 'qiniu'
 			})
-			that._getQiniuTOken().then((data)=>{
+			.catch((err)=>{
+				AlertIOS.alert('上传失败')
+			}).then((data)=>{
 				if (data && data.success) {
+					console.log('上传')
+					console.log(1, data)
 					var token = data.data.token
 					var key = data.data.key
 					var body = new FormData()
@@ -173,23 +214,26 @@ var Edit = React.createClass({
 						uri: uri,
 						name: key
 					})
-					that._upload(body)
+					that._upload(body, 'video')
 				}
 			})
 		})
 	},
-	_upload (body) {
+	_upload (body, type) {
 		// _upload 方法实现了对视屏上传进度的监控, 包括上传前和上传后的管理
 		var that = this
 		//构建一个异步接口并生成一个实例
 		var xhr = new XMLHttpRequest()
 		var url = config.qiniu.upload
+		if (type == 'audio') {
+			url = config.cloudinary.video
+		}
 
-		that.setState({
-			videoUploadedProgress: 0,
-			videoUploading: true, // 正在上传中
-			videoUploaded: false // 已经上传结束
-		})
+		var state = {}
+		state[type + 'UploadedProgress'] = 0
+		state[type + 'Uploading'] = true
+		state[type + 'Uploaded'] = false
+		that.setState(state)
 		xhr.open('POST', url)
 	
 		xhr.onload = function() {
@@ -212,31 +256,34 @@ var Edit = React.createClass({
 
 			// 如果存在public_id 说明图片已经上传完毕
 			if (response) {
-			
-				that.setState({
-					video: response,
-					videoUploading: false, // 正在上传中
-					videoUploaded: true // 已经上传结束
-				})
-
-				var videoURL = config.api.base + config.api.video
-				var accessToken = that.state.user.accessToken
-
-				request.post(videoURL, {
-					accessToken: accessToken,
-					video: response
-				})
-				.catch((err) => {
-					console.log(err)
-					AlertIOS.alert('视屏同步错误，请重新上传')
-				})
-				.then((data) => {
-					console.log('视屏同步')
-					console.log(data)
-					if (!data || !data.success) {
-						AlertIOS.alert('视屏同步出错，重新上传')
+				console.log('response')
+				console.log(1, response)
+				var newState = {}
+				newState[type] = response
+				newState[type+ 'Uploading'] = false
+				newState[type+ 'Uploaded'] = true
+				that.setState(newState)
+				if (type === 'video') {
+					var updateURL = config.api.base + config.api[type]
+					var accessToken = that.state.user.accessToken
+					var updateBody = {
+						accessToken: accessToken,
 					}
-				})
+					updateBody[type] = response
+	
+					request.post(updateURL,updateBody)
+					.catch((err) => {
+						console.log(err)
+						AlertIOS.alert('视屏同步错误，请重新上传')
+					})
+					.then((data) => {
+						console.log('视屏同步')
+						console.log(data)
+						if (!data || !data.success) {
+							AlertIOS.alert('视屏同步出错，重新上传')
+						}
+					})
+				}
 			}
 		}
 
@@ -245,9 +292,9 @@ var Edit = React.createClass({
 				if (event.lengthComputable) {
 					var percent = Number((event.loaded / event.total).toFixed(2))
 				}
-				that.setState({
-					videoUploadedProgress: percent
-				})
+				var progressState = {}
+				progressState[type + 'UploadedProgress'] = percent
+				that.setState(progressState)
 			}
 		}
 		xhr.send(body)
@@ -268,9 +315,12 @@ var Edit = React.createClass({
 	},
 	_onEnd () {
 		if (this.state.recording) {
+			// 结束音频录制
+			AudioRecorder.stopRecording()
 			this.setState({
 				videoProgress: 1,
-				recording: false
+				recording: false,
+				recordDone: true
 			})
 		}
 	},
@@ -279,24 +329,26 @@ var Edit = React.createClass({
 			videoOk: false
 		})
 	},
-	_rePlay () {
+	_preview() {
+		if (this.state.audioPlaying) { // 如果现在正在播放音频，需要停止音频播放
+			 AudioRecorder.stopPlaying()
+		}
+
+		this.setState({
+			videoProgress: 0, // 视屏播放进度归为0
+			audioPlaying: true // 显示进度条
+		})
+
+		// 启动音频的播放
+		AudioRecorder.playRecording()
+		// 音频播放的同时，启动视频播放
 		this.refs.videoPlayer.seek(0)
 	},
-	_pause () {
-		if(!this.state.paused) {
-			this.setState({
-				paused: true
-			})
-		}
-	},
-	_resume () {
-		if(this.state.paused) {
-			this.setState({
-				paused: false
-			})
-		}
-	},
 	_counting () {
+
+		// this.state.counting 正在倒计时的标识位
+		// this.state.recording 正在录制的标识位
+		// this.state.audioPlaying 正在预览的标识位
 		if (!this.state.counting && !this.state.recording) {			
 			this.setState({
 				counting: true
@@ -309,8 +361,11 @@ var Edit = React.createClass({
 		this.setState({
 			videoProgress: 0, // 每次录制的时候都是重新开始录制
 			recording: true,
-			counting: false
+			counting: false,
+			recordDone: false // 隐藏预览按钮
 		})
+		// 启动音频录制，用户启动录音按键的时候，开启react-native-audio。
+		AudioRecorder.startRecording()
 
 		this.refs.videoPlayer.seek(0)
 	},
@@ -364,12 +419,26 @@ var Edit = React.createClass({
 							:null
 						}
 						{
-							this.state.recording
+							this.state.recording || this.state.audioPlaying
 							?<View style={styles.progressTipBox}>
 								<ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress}/>
-								<Text style={styles.progressTip}>录制声音中</Text>
+								{
+									this.state.recording
+									? <Text style={styles.progressTip}>录制声音中</Text>
+									: null
+								}
 							</View>
 							:null
+						}
+						{
+							this.state.recordDone
+							?<View style={styles.previewBox}>
+								<IonIcons name='ios-play' style={styles.prviewIcon}/>
+								<Text style={styles.previewText} onPress={this._preview}>
+									预览
+								</Text>
+							</View>
+							: null
 						}
 					</View>
 				</View>
@@ -385,7 +454,7 @@ var Edit = React.createClass({
 			{
 				this.state.videoUploaded
 				?   <View style = {styles.recordBox}>
-						<View style = {[styles.recordIconBox,this.state.recording && styles.recordOn]}>
+						<View style = {[styles.recordIconBox,(this.state.recording || this.state.audioPlaying) && styles.recordOn]}>
 						{
 							this.state.counting && !this.state.recording
 							?   <CountDownText style={styles.countBtn} 
@@ -408,6 +477,28 @@ var Edit = React.createClass({
 					</View>
 				: null
 			}
+			{
+				this.state.videoUploaded && this.state.recordDone
+				?<View style={styles.uploadAudioBox}>
+					{
+						!this.state.audioUploaded && !this.state.audioUploading
+						?<Text style={styles.uploadAudioText} onPress = {this._uploadAudio}>下一步</Text>
+						:null
+					}
+					{
+						this.state.audioUploading
+						? <Progress.Circle
+							size = {60} 
+							showsText = {true}
+							color = {'#ee735c'}
+							progress = {this.state.audioUploadedProgress} />
+						: null
+					}
+				</View>
+				: null
+			}
+			<View style={styles.uploadAudioBox}>
+			</View>
 		  </View>
         </View>
       )
@@ -534,6 +625,47 @@ var styles = StyleSheet.create({
 	},
 	recordOn: {
 		backgroundColor: '#ccc'
+	},
+	previewBox: {
+		width: 80,
+		height:30,
+		position: 'absolute',
+		right:10,
+		bottom:10,
+		borderWidth: 1,
+		borderColor: '#ee735c',
+		borderRadius: 3,
+		flexDirection: 'row',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	prviewIcon: {
+		marginRight: 5,
+		fontSize: 20,
+		color: '#ee735c',
+		backgroundColor: 'transparent'
+	},
+	previewText: {
+		fontSize: 20,
+		color:'#ee735c',
+		backgroundColor: 'transparent'
+	},
+	uploadAudioBox: {
+		width: width,
+		height: 60,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	uploadAudioText: {
+		width: width-20,
+		borderWidth: 1,
+		borderColor: '#ee735c',
+		borderRadius: 5,
+		textAlign: 'center',
+		fontSize: 30,
+		color: '#ee735c'
+		 
 	}
 });
 
