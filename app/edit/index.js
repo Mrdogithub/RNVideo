@@ -33,6 +33,8 @@ import {
 } from 'react-native';
 var defaultState = {
 	previewVideo: null,
+	videoId: null,
+	audioId: null,
 	// video upload
 	video: null,
 	videoUploading:false,
@@ -263,27 +265,41 @@ var Edit = React.createClass({
 				newState[type+ 'Uploading'] = false
 				newState[type+ 'Uploaded'] = true
 				that.setState(newState)
-				if (type === 'video') {
-					var updateURL = config.api.base + config.api[type]
-					var accessToken = that.state.user.accessToken
-					var updateBody = {
-						accessToken: accessToken,
-					}
-					updateBody[type] = response
-	
-					request.post(updateURL,updateBody)
-					.catch((err) => {
-						console.log(err)
-						AlertIOS.alert('视屏同步错误，请重新上传')
-					})
-					.then((data) => {
-						console.log('视屏同步')
-						console.log(data)
-						if (!data || !data.success) {
-							AlertIOS.alert('视屏同步出错，重新上传')
-						}
-					})
+				var updateURL = config.api.base + config.api[type]
+				var accessToken = that.state.user.accessToken
+				var updateBody = {
+					accessToken: accessToken,
 				}
+				updateBody[type] = response
+
+				if (type === 'audio') {
+					updateBody.videoId = that.state.videoId
+				}
+				request.post(updateURL,updateBody)
+				.catch((err) => {
+					if (type === 'video') {
+						AlertIOS.alert('视屏同步错误，请重新上传')
+					}
+					else if (type === 'audio') {
+						AlertIOS.alert('视屏同步错误，请重新上传')
+					}
+				})
+				.then((data) => {
+					if (data && data.success) {
+						var mediaState = {}
+
+						mediaState[type + 'Id'] = data.data
+						that.setState(mediaState)
+					}
+					else {
+						if (type === 'video') {
+							AlertIOS.alert('视屏同步错误，请重新上传')
+						}
+						else if (type === 'audio') {
+							AlertIOS.alert('视屏同步错误，请重新上传')
+						}
+					}
+				})
 			}
 		}
 

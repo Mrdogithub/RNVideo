@@ -29,7 +29,8 @@ module.exports = {
         verify: '/api/u/verify',
         update: '/api/u/update',
         signature: '/api/u/signature',
-        video: '/api/creations/video'
+        video: '/api/creations/video',
+        audio: '/api/creations/audio'
     }
 }
 

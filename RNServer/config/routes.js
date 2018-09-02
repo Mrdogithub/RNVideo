@@ -15,5 +15,6 @@ module.exports = function() {
     router.post('/u/update', App.hasBody, App.hasToken, User.update)
     router.post('/u/signature', App.hasBody, App.hasToken, App.signature)
     router.post('/creations/video', App.hasBody, App.hasToken, Creation.video)
+    router.post('/creations/audio', App.hasBody, App.hasToken, Creation.audio)
     return router
 }
