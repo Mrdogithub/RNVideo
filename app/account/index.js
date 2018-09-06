@@ -315,7 +315,7 @@ var Account = React.createClass({
 					<View style = {styles.fieldItem}>
 						<Text style = {styles.lable}>昵称</Text>
 						<TextInput
-							placeHolder = {'输入你的昵称'}
+							placeholder = {'输入你的昵称'}
 							style = {styles.inputField}
 							autoCapitalize = {'none'}
 							auto = {false}
@@ -329,7 +329,7 @@ var Account = React.createClass({
 					<View style = {styles.fieldItem}>
 						<Text style = {styles.lable}>品种</Text>
 						<TextInput
-							placeHolder = {'品种'}
+							placeholder = {'品种'}
 							style = {styles.inputField}
 							autoCapitalize = {'none'}
 							auto = {false}
@@ -494,7 +494,7 @@ var styles = StyleSheet.create({
         borderWidth:1,
         borderRadius:4,
         color:'#ee735c'
-    },
+    }
 });
 
 module.exports = Account

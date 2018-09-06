@@ -18,6 +18,21 @@ function upToken(bucket, key) {
     return putPolicy.uploadToken(mac)
 }
 
+exports.saveToQiniu = function(url, key){
+    console.log(1, qiniu)
+    var client = new qiniu.rs.Client()
+
+    return new Promise(function(resolve, reject){
+        client.fetch(url, 'myproudct', key, function(err, ret){
+            if (!err) {
+                resolve(ret)
+            }
+            else {
+                reject(err)
+            }
+        })
+    })
+}
 exports.uploadToCloudinary = function(url) {
     return new Promise(function(resolve,reject) {
         cloudinary.uploader.upload(url, function(result){
@@ -43,24 +58,22 @@ exports.getQiniuToken = function(body) { // 获取qiniu 签名
     var options = {
         persistentNotifyUrl: config.notify //进行转码操作的url
     }
-    var options = {
-        persistentNotifyUrl: config.notify
-    }
-
     if (type === 'avatar') {
         key += '.jpeg'
-        putPolicy = new qiniu.rs.PutPolicy({scope: bucket + ':' + key})
+        putPolicy = new qiniu.rs.PutPolicy(bucket + ':' + key)
     }
     else if (type === 'video') {
         key += '.mp4'
         options.scope = 'myproudct:' + key
         options.persistentOps = 'avthumb/mp4/an/1'
-        putPolicy = new qiniu.rs.PutPolicy(options)
+        putPolicy = new qiniu.rs.PutPolicy2(options)
     }
     else if (type === 'audio') {
 
     }
-    var token =  putPolicy.uploadToken(mac)
+    console.log('type:'+ type)
+    console.log(1,putPolicy)
+    var token =  putPolicy.token()
 
     return {
         key: key,

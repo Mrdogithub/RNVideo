@@ -13,7 +13,9 @@ var AudioSchema = new Schema({
     video: { // 每份音频文件对应一个视屏文件，因为音频是对应到每个视屏配音
         type: ObjectId,
         ref: 'Video'
-    },    
+    },
+    qiniu_video: String,
+    qiniu_thumb: String,
     public_id: String, // cloudnary 资源文件名
     detail: Mixed,
     meta: {
@@ -26,7 +28,7 @@ var AudioSchema = new Schema({
             default: Date.now()
         }
     }
-})
+}) 
 // 3.前置处理
 // save 之前对schema 进行前置处理
 AudioSchema.pre('save', function(next){
