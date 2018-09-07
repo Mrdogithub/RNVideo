@@ -2,6 +2,7 @@ var IonIcons = require('react-native-vector-icons/Ionicons')
 var Request = require('../common/request')
 var Config = require('../common/config')
 var Detail = require('./detail')
+var util = require('../common/util')
 import React , { Component }from 'react';
 
 import {
@@ -10,6 +11,7 @@ import {
     TouchableHighlight,
     ActivityIndicator,
     RefreshControl,
+    AsyncStorage,
     AlertIOS,
     Dimensions,
     Text,
@@ -43,7 +45,7 @@ var Item = React.createClass({
         var body = {
             id: row._id,
             up: up? 'yes' : 'no',
-            accessToken: 'abc'
+            accessToken: this.props.user.accessToken
         }
 
         Request.post(url, body).then(function(data){
@@ -65,7 +67,7 @@ var Item = React.createClass({
                 <View style={styles.item}>
                     <Text style={styles.title}>{row.title}</Text>
                     <Image
-                        source={{uri: row.thumb}}
+                        source={{uri: util.thumb(row.qiniu_thumb)}}
                         style={styles.thumb}>
                         <IonIcons 
                             name="ios-play"
@@ -111,7 +113,28 @@ var List = React.createClass({
         }
     },
     componentDidMount () {
-        this._fetchData(1)
+        // 页面加载的时候，先读取用户数据，然后再取fetch data
+
+        var that = this
+        // 从存储在asyncstorage中的用户信息中获取用户头像
+		AsyncStorage.getItem('user') //异步读取用户信息，如果存在用户信息，更新用户状态
+        .then((data)=>{
+            var user
+            if (data) {
+                user = JSON.parse(data)
+            }
+            user.avatar = '';
+            AsyncStorage.setItem('user',JSON.stringify(user))
+            if(user && user.accessToken) {
+                that.setState({ //更新用户信息状态，接着会第二次触发render，进行模版的视图更新
+                    user:user
+                }, function() {
+                    // 状态更新完毕之后，再进行获取的动作，否则状态里面的user 是空的
+                    that._fetchData()
+                })
+            }
+        })
+
     },
     _fetchData (page) {
         var that = this
@@ -127,57 +150,42 @@ var List = React.createClass({
             })
         }
         Request.get(Config.api.base + Config.api.creations,{
-            accessToken: 'asfas',
+            accessToken: this.state.user.accessToken,
             page: page
         }).then((data) => {
             // 通过mockjs ，解析rap返回的数据
-            if (data.success) {
-                // clone 当前数据
-                var items = cachedResult.items.slice()
+            if (data && data.success) {
+                console.log('list DATA')
+                console.log(1, data)
+                if (data.data.length > 0) {
+                    // clone 当前数据
+                    var items = cachedResult.items.slice()
 
-                if (page !== 0) {
-                    //将获取的新列表追加到拷贝列表中
-                    items = items.concat(data.data)
-                    console.log('item')
-                    console.log(1,data.data)
-                    cachedResult.nextPage += 1
-                } else {
-                    items = data.data.concat(items)
-                }
+                    if (page != 0) {
+                        items = items.concat(data.data)
+                        cachedResult.nextPage += 1
+                    }
+                    else {
+                        items = data.data.concat(items)
+                    }
+                    // 更新缓存中的数据列表
+                    cachedResult.items = items
+                    cachedResult.total = data.total
 
-                // 更新缓存中的数据列表
-                cachedResult.items = items
-                cachedResult.total = data.total
-    
-                if (page !== 0 ) {
-                    // 用获取到新数据，重新渲染ListView
-                    that.setState({
-                        dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-                        isLoadingTail: false
-                    })
-                } else {
-                    // 用获取到新数据，重新渲染ListView
-                    that.setState({
-                        dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-                        isRefreshing: false
-                    })
+                    if (page !== 0 ) {
+                        // 用获取到新数据，重新渲染ListView
+                        that.setState({
+                            dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+                            isLoadingTail: false
+                        })
+                    } else {
+                        // 用获取到新数据，重新渲染ListView
+                        that.setState({
+                            dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+                            isRefreshing: false
+                        })
+                    }
                 }
-                // setTimeout(function () {
-                //     if (page !== 0 ) {
-                //         // 用获取到新数据，重新渲染ListView
-                //         that.setState({
-                //             dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-                //             isLoadingTail: false
-                //         })
-                //     } else {
-                //         // 用获取到新数据，重新渲染ListView
-                //         that.setState({
-                //             dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-                //             isRefreshing: false
-                //         })
-                //     }
-                   
-                // }, 2000)
             }
         })
         .catch((error) => {
@@ -260,7 +268,7 @@ var List = React.createClass({
     },
     _renderRow (row){
         return (
-            <Item key = {row._id} row = {row} onSelect = { () => this._loadPage(row)}/>
+            <Item user = {this.state.user} key = {row._id} row = {row} onSelect = { () => this._loadPage(row)}/>
         )
     },
     _loadPage (row) {

@@ -7,6 +7,7 @@ import {
   Text,
   ActivityIndicator,
   TouchableOpacity,
+  AsyncStorage,
   Dimensions,
   TextInput,
   AlertIOS,
@@ -21,7 +22,7 @@ var Video = require('react-native-video').default
 // var Button = require('react-native-button')
 var Request = require('../common/request')
 var Config = require('../common/config')
-
+var util = require('../common/util')
 var width = Dimensions.get('window').width
 // 在状态之外管理列表里所有的数据
 var cachedResult = {
@@ -65,7 +66,27 @@ var Detail = React.createClass({
 		}
 	},
 	componentDidMount () {
-		this._fetchData(1)
+		// 页面加载的时候，先读取用户数据，然后再取fetch data
+
+		var that = this
+		// 从存储在asyncstorage中的用户信息中获取用户头像
+		AsyncStorage.getItem('user') //异步读取用户信息，如果存在用户信息，更新用户状态
+		.then((data)=>{
+			var user
+			if (data) {
+				user = JSON.parse(data)
+			}
+			user.avatar = '';
+			AsyncStorage.setItem('user',JSON.stringify(user))
+			if(user && user.accessToken) {
+				that.setState({ //更新用户信息状态，接着会第二次触发render，进行模版的视图更新
+					user:user
+				}, function() {
+					// 状态更新完毕之后，再进行获取的动作，否则状态里面的user 是空的
+					that._fetchData()
+				})
+			}
+		})
 	},
 	_fetchData (page) {
         var that = this
@@ -75,26 +96,28 @@ var Detail = React.createClass({
 		})
 		var url = Config.api.base + Config.api.comment
         Request.get(url,{
-			accessToken: '123',
-			creation: '123',
+			accessToken: this.state.user.accessToken,
+			creation: this.state.data._id,
 			page: page
         }).then((data) => {
             // 通过mockjs ，解析rap返回的数据
-            if (data.success) {
-                // clone 当前数据
-                var items = cachedResult.items.slice()
+            if (data && data.success) {
+				if (data.data.length > 0) {
+					// clone 当前数据
+					var items = cachedResult.items.slice()
 
-				             
-				// 更新缓存中的数据列表
-                items = items.concat(data.data)
-				cachedResult.nextPage += 1
-                cachedResult.items = items
-                cachedResult.total = data.total
+												
+					// 更新缓存中的数据列表
+					items = items.concat(data.data)
+					cachedResult.nextPage += 1
+					cachedResult.items = items
+					cachedResult.total = data.total
 
-				that.setState({
-					dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
-					isLoadingTail: false
-				})
+					that.setState({
+						dataSource: that.state.dataSource.cloneWithRows(cachedResult.items),
+						isLoadingTail: false
+					})
+				}
             }
         })
         .catch((error) => {
@@ -137,7 +160,7 @@ var Detail = React.createClass({
 		return (
 			<View style = {styles.listHeader}>
 				<View style = {styles.infoBox}>
-					<Image style = {styles.avatar} source = {{uri:data.author.avatar}} />
+					<Image style = {styles.avatar} source = {{uri: util.avatar(data.author.avatar)}} />
 					<View>
 						<Text style = {styles.nickName}>{data.author.nickname}</Text>
 						<Text style = {styles.title}>{data.title}</Text>
@@ -253,7 +276,7 @@ var Detail = React.createClass({
 	_renderRow (row) {
 		return(
 		<View style = {styles.replyBox} key = {row._id}>
-			<Image style = {styles.replyAvatar} source = {{uri:row.replyBy.avatar}} />
+			<Image style = {styles.replyAvatar} source = {{uri:util.avatar(row.replyBy.avatar)}} />
 			<View style = {styles.reply}>
 				<Text style = {styles.replyNickName}>{row.replyBy.nickname}</Text>
 				<Text style = {styles.replyContent}>{row.replyBy.content}</Text>
@@ -275,8 +298,8 @@ var Detail = React.createClass({
 			isSending: true
 		},function(){
 			var body = {
-				accessToken: 'abc',
-				creation: '1234',
+				accessToken: this.user.accessToken,
+				creation: this.state.data._id,
 				content: this.state.content
 			}
 
@@ -333,7 +356,7 @@ var Detail = React.createClass({
 				<View style = {styles.video.Box}>
 					<Video
 						ref = 'videoPlayer'
-						source = {{uri:data.url}}
+						source = {{uri:util.video(data.qiniu_video)}}
 						style = {styles.video}
 
 						volume = {5} // 声音放大倍数

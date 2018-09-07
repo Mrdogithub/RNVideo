@@ -9,7 +9,13 @@ module.exports = {
         }
     },
     qiniu: {
-        upload: 'http://upload.qiniu.com'
+        upload: 'http://upload.qiniu.com',
+        thumb: 'http://pcvdaisr8.bkt.clouddn.com/',
+        video: 'http://pcvdaisr8.bkt.clouddn.com/',
+        avatar: 'http://pcvdaisr8.bkt.clouddn.com/'
+    },
+    backup:{
+        avatar: 'http://res.cloudinary.com/dsf3opwhl/video/upload/tqi73d6gtlbyhgaepv5i.jpg'
     },
     cloudinary: {
         'base': 'https://res.cloudinary.com/dsf3opwhl',

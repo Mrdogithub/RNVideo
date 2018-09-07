@@ -29,7 +29,7 @@ var myFunReactNative = React.createClass({
   displayName: 'myFunReactNative',
   getInitialState () {
     return {
-      selectedTab: 'Edit',
+      selectedTab: 'list',
       isLogin: false,
       user:null
     };

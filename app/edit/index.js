@@ -436,6 +436,8 @@ var Edit = React.createClass({
 					AlertIOS.alert('视屏发布失败！!')
 				})
 				.then(function(data){
+					console.log('数据同步成功：' + data)
+					console.log(1, data)
 					if (data && data.success) {
 						that._closeModal()
 						
@@ -443,7 +445,7 @@ var Edit = React.createClass({
 						console.log('state')
 						console.log(1, state)
 						that.setState(state)
-						AlertIOS.alert('视屏发布成功!')
+						// AlertIOS.alert('视屏发布成功!')
 					}
 					else{
 						that.setState({

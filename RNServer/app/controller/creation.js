@@ -2,9 +2,45 @@
 var mongoose = require('mongoose')
 var Video = mongoose.model('Video')
 var Audio = mongoose.model('Audio')
+var Creation = mongoose.model('Creation')
+var xss = require('xss')
 var Promise = require('bluebird')
 var config = require('../../config/config')
 var robot = require('../service/robot')
+
+var userFields = [
+    'avatar',
+    'nickname',
+    'gender',
+    'age',
+    'breed'
+]
+exports.find = function *(next) {
+    var page = parseInt(this.query.page, 10)
+    var count = 5
+    var offset = (page - 1) * count
+    
+    // 通过数组的形式包装多个异步操作，等所有异步操作都执行完毕之后，在继续下一步操作
+    var queryArray = [
+        Creation
+            .find({finish: 70})
+            .sort({'meta.createAt': -1})
+            .skip(offset)
+            .limit(count)
+            .populate('author', userFields.join(' '))
+            .exec(),
+        Creation.count({finish: 70}).exec()
+    ]
+
+    var data = yield queryArray
+    console.log('fetch data from service side')
+    console.log(1 ,data)
+    this.body = {
+        success: true,
+        data: data[0],
+        total: data[1]
+    }
+}
 
 function AsyncMedia(videoId, audioId) {
 
@@ -39,13 +75,13 @@ function AsyncMedia(videoId, audioId) {
 
         console.log('begin transfer')
         var video_public_id = video.public_id
-        var audio_public_id = audio.public_id.replace('/', ':')
-        var videoName = video_public_id.replace('/', '_') + '.mp4'
+        var audio_public_id = audio.public_id.replace(/\//g, ':')
+        var videoName = video_public_id.replace(/\//g, '_') + '.mp4'
         // 通过在地址上拼接参数就可以动态合并音频和视屏的数据
         var videoURL = 'http://res.cloudinary.com/dsf3opwhl/video/upload/e_volume:-100/e_volume:400,l_video:' + audio_public_id + '/' + video_public_id + '.mp4'
 
         // 获取封面图
-        var thumbName = video_public_id.replace('/', '_') + '.jpg'
+        var thumbName = video_public_id.replace(/\//g, '_') + '.jpg'
         var thumbURL = 'http://res.cloudinary.com/dsf3opwhl/video/upload/' + video_public_id + '.jpg'
 
         console.log('data transfer to qiniu')
@@ -61,6 +97,22 @@ function AsyncMedia(videoId, audioId) {
                     audio.save().then(function(_video){
                         console.log(_video)
                         console.log('video transfer success')
+                        // 点击发布的时候，有可能在发布的这一刻，视屏并没有上传结束
+                        // 1.发布视频的时候等待一下，等到qiniu的视屏同步结束再保存creation
+                        // 2.作为后台的任务定期执行
+                        // 3.上传完视屏以后调用asynicmedia的时候，通过creation查找 video
+                        Creation.findOne({
+                            video: video._id,
+                            audio: audio._id
+                        }).exec()
+                        .then(function(_creation) {
+                            if (_creation) {
+                                if (!creation.qiniu_video) {
+                                    _creation.qiniu_video = _audio.qiniu_video
+                                    _creation.save()
+                                }
+                            }
+                        })
                     })
                 }
             })
@@ -73,6 +125,18 @@ function AsyncMedia(videoId, audioId) {
                 if (response && response.key) {
                     audio.qiniu_thumb = response.key
                     audio.save().then(function(_audio){
+                        Creation.findOne({
+                            video: video._id,
+                            audio: audio._id
+                        }).exec()
+                        .then(function(_creation) {
+                            if (_creation) {
+                                if (!creation.qiniu_video) {
+                                    _creation.qiniu_thumb = _audio.qiniu_thumb
+                                    _creation.save()
+                                }
+                            }
+                        })
                         console.log(_audio)
                         console.log('audio transfer success')
                     })
@@ -189,11 +253,83 @@ exports.save = function *(next){
     var videoId = body.videoId
     var audioId = body.audioId
     var title = body.title
+    var user = this.session.user
+    var video = yield Video.findOne({
+        _id: videoId
+    }).exec()
 
-    console.log(videoId)
-    console.log(audioId)
-    console.log(title)
+    var audio = yield Audio.findOne({
+        _id: audioId
+    }).exec()
+
+    if (!video || !audio) {
+        this.body = {
+            success: false,
+            err: '音频或者视频素材不能为空'
+        }
+
+        return next
+    }
+
+    // 数据去重机制，避免重复创建
+    var creation = yield Creation.findOne({
+        audio: audioId,
+        video: videoId
+    }).exec()
+
+    // 如果creation 数据不存在，创建一条新数据
+    if (!creation) {
+        var creationData = {
+            author: user._id,
+            title: xss(title),
+            audio: audioId,
+            video: videoId,
+            finish: 20
+        }
+
+        // 通过获取public_id 进一步确定音频和视屏已经准备充分
+        var video_public_id = video.public_id
+        var audio_public_id = audio.public_id
+
+        if (video_public_id && audio_public_id) {
+            creationData.cloudinary_video = 'http://res.cloudinary.com/dsf3opwhl/video/upload/e_volume:-100/e_volume:400,l_video:' + audio.public_id.replace(/\//g, ':') + '/' + video_public_id + '.mp4'
+            creationData.cloudinary_thumb = 'http://res.cloudinary.com/dsf3opwhl/video/upload/' + video_public_id + '.jpg'
+            creationData.finish += 20
+        }
+
+
+        // 封面图和视屏已经同步结束之后，需要对creationData 进行赋值操作
+        if (audio.qiniu_thumb) {
+            creationData.qiniu_thumb = audio.qiniu_thumb
+            creationData.finish += 60
+        }
+
+        if (audio.qiniu_video) {
+            creationData.qiniu_video = audio.qiniu_video
+            creationData.finish += 60
+        }
+        // 通过new的方式新建一个数据的实例
+        creation = new Creation(creationData)
+    }
+
+    creation = yield creation.save()
+    console.log('creation:' + creation)
+
     this.body = {
-        success: true
+        success: true,
+        data: {
+            _id: creation._id,
+            finish: creation.finish,
+            title: creation.title,
+            qiniu_thumb: creation.qiniu_thumb,
+            qiniu_video: creation.qiniu_video,
+            author: {
+                avatar: user.avatar,
+                nickname: user.nickname,
+                gender: user.gender,
+                breed: user.breed,
+                _id: user._id   
+            }
+        }
     }
 }
