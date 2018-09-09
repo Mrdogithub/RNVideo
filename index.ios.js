@@ -12,7 +12,9 @@ import {
   Navigator,
   Text,
   TabBarIOS,
+  ActivityIndicator,
   View,
+  Dimensions,
   AsyncStorage
 } from 'react-native';
 
@@ -20,7 +22,10 @@ import {
 var List = require('./app/creation/index')
 var Edit = require('./app/edit/index')
 var Login = require('./app/account/login')
+var Slider = require('./app/account/slider')
 var Account = require('./app/account/index')
+var width = Dimensions.get('window').width
+var height = Dimensions.get('window').height
 var myFunReactNative = React.createClass({
   statics: {
     title: '<TabBarIOS>',
@@ -31,11 +36,13 @@ var myFunReactNative = React.createClass({
     return {
       selectedTab: 'list',
       isLogin: false,
+      entered: false, // 是否是第一次进入app的标识位
+      booted: false, //启动画面结束之后，登录状态同步之前的 加载页面状态
       user:null
     };
   },
 
-  _renderContent (color: string, pageText: string, num?: number) {
+  _renderContent (color: String, pageText: string, num?: number) {
     return (
       <View style={[styles.tabContent, {backgroundColor: color}]}>
         <Text style={styles.tabText}>{pageText}</Text>
@@ -45,6 +52,7 @@ var myFunReactNative = React.createClass({
   },
 
   componentDidMount() {
+
     this._asyncAppStatus()
   },
   _logout() {
@@ -57,18 +65,26 @@ var myFunReactNative = React.createClass({
   _asyncAppStatus() {
     var that = this
     console.log('get user')
-    AsyncStorage.getItem('user')
+    AsyncStorage.multiGet(['user', 'entered'])
     .then((data) => {
       var user
-      var newState = {};
-      if(data) {
-        user = JSON.parse(data)
+      var userData = data[0][1]
+      var enteredData = data[1][1]
+      var newState = {
+		  booted: true
+	  };
+      if(userData) {
+        user = JSON.parse(userData)
       }
       if(user && user.accessToken) {
         newState.user = user
         newState.isLogin = true
       }else{
         newState.isLogin = false
+      }
+
+      if (enteredData === 'yes') {
+        newState.entered = true
       }
       that.setState(newState)
     })
@@ -87,7 +103,27 @@ var myFunReactNative = React.createClass({
       })
     })
   },
+  _enterSlide() {
+    this.setState({
+      entered: true
+    }, function() {
+      // 存储entered 标识位，用于下一次检查 entered状态。
+      AsyncStorage.setItem('entered', 'yes')
+    })
+  },
   render () {
+    if (!this.state.booted) { // 在获取用户登录状态之前的loading效果
+		return (
+			<View style = { styles.bootPage}>
+				<ActivityIndicator color = "#ee735c"></ActivityIndicator>
+			</View>
+		)
+    }
+
+    if (!this.state.entered) { // 如果用户是第一次进入app 需要提供slider
+      return <Slider enterSlide = {this._enterSlide}/>
+    }
+
     if(!this.state.isLogin) {
       return <Login afterLogin={this._afterLogin}/>
     }
@@ -157,6 +193,12 @@ var styles = StyleSheet.create({
     color: 'white',
     margin: 50,
   },
+  bootPage: {
+	  width: width,
+	  height: height,
+	  backgroundColor: "#fff",
+	  justifyContent: 'center'
+  }
 });
 
 module.exports = myFunReactNative;

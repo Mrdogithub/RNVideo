@@ -3,7 +3,7 @@ var Router = require('koa-router')
 var User = require('../app/controller/user.js')
 var App = require('../app/controller/app.js')
 var Creation = require('../app/controller/creation.js')
-
+var Comment = require('../app/controller/comment.js')
 
 module.exports = function() {
     var router = new Router({
@@ -20,5 +20,13 @@ module.exports = function() {
     router.post('/creations', App.hasBody, App.hasToken, Creation.save)
     router.post('/creations/video', App.hasBody, App.hasToken, Creation.video)
     router.post('/creations/audio', App.hasBody, App.hasToken, Creation.audio)
+
+    // comments
+    router.get('/comments', App.hasToken, Comment.find)
+    router.post('/comments', App.hasBody, App.hasToken, Comment.save)
+
+
+    // votes
+    router.post('/up', App.hasBody, App.hasToken, Creation.up)
     return router
 }

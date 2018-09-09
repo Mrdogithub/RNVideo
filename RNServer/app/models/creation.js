@@ -36,6 +36,14 @@ var CreationSchema = new Schema({
         default: 0
     },
 
+    // 存储点赞的每个用户id
+    votes: [String],
+
+    // 点赞的次数
+    up: {
+        type: Number,
+        default: 0
+    },
 
 
     qiniu_detail: Mixed,

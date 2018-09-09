@@ -34,5 +34,6 @@ exports.video = function (key) {
     // if (key.indexOf('video/') > -1) {
     //     return config.cloudinary.base + '/video/upload/' + key
     // }   
+    console.log(config.qiniu.video + key + ">>>>> qiniu video url")
     return config.qiniu.video + key
 }

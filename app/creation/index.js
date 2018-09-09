@@ -41,14 +41,17 @@ var Item = React.createClass({
         var row = this.state.row
         var url = Config.api.base + Config.api.up
         var that = this
-        AlertIOS.alert(row._id)
+        
         var body = {
             id: row._id,
             up: up? 'yes' : 'no',
             accessToken: this.props.user.accessToken
         }
-
+        console.log('up params')
+        console.log(1, body)
         Request.post(url, body).then(function(data){
+            console.log('up data')
+            console.log(1, data)
             if(data && data.success) {
                 that.setState({
                     up: up
@@ -149,8 +152,10 @@ var List = React.createClass({
                 isRefreshing: true
             })
         }
+
+        var user = this.state.user
         Request.get(Config.api.base + Config.api.creations,{
-            accessToken: this.state.user.accessToken,
+            accessToken: user.accessToken,
             page: page
         }).then((data) => {
             // 通过mockjs ，解析rap返回的数据
@@ -158,6 +163,20 @@ var List = React.createClass({
                 console.log('list DATA')
                 console.log(1, data)
                 if (data.data.length > 0) {
+
+                    // 判断当前用户是否对creation 视屏进行过点赞,如果点赞进行状态变更操作
+                    data.data.map(function(item){
+                        var votes = item.votes || []
+
+                        if(votes.indexOf(user._id) > -1) {
+                            item.voted = true
+                        }
+                        else {
+                            item.voted = false
+                        }
+
+                        return item
+                    })
                     // clone 当前数据
                     var items = cachedResult.items.slice()
 

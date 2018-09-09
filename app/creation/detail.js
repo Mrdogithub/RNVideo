@@ -274,12 +274,14 @@ var Detail = React.createClass({
 		}
 	},
 	_renderRow (row) {
+		console.log('row:'+ row)
+		console.log(1, row)
 		return(
 		<View style = {styles.replyBox} key = {row._id}>
 			<Image style = {styles.replyAvatar} source = {{uri:util.avatar(row.replyBy.avatar)}} />
 			<View style = {styles.reply}>
 				<Text style = {styles.replyNickName}>{row.replyBy.nickname}</Text>
-				<Text style = {styles.replyContent}>{row.replyBy.content}</Text>
+				<Text style = {styles.replyContent}>{row.content}</Text>
 			</View>
 		</View>)
 	},
@@ -298,29 +300,25 @@ var Detail = React.createClass({
 			isSending: true
 		},function(){
 			var body = {
-				accessToken: this.user.accessToken,
-				creation: this.state.data._id,
-				content: this.state.content
+				accessToken: this.state.user.accessToken,
+				comment: {
+					creation: this.state.data._id,
+					content: this.state.content
+				}
 			}
 
 			var url = Config.api.base + Config.api.comment
 
 			Request.post(url,body)
 				.then(function(data){
+					console.log(1, data)
 					if (data && data.success) {
 						var items = cachedResult.items.slice()
 						var content = that.state.content
-						items = [{
-							
-							replyBy:{
-								avatar:'https://dummyimage.com/640x640/8bf70c)',
-								nickname:'Hi peter',
-								content: content
-							}
-						}].concat(items)
-
+						items = data.data.concat(items)
 						cachedResult.items = items
 						cachedResult.total = cachedResult.total +1
+
 						that.setState({
 							content: '',
 							isSending: false,
@@ -342,6 +340,8 @@ var Detail = React.createClass({
 	},
 	render () {
 		var data = this.props.data
+		console.log('detail render data:')
+		console.log(1 , data)
 		return (
 			<View style={styles.tabContent}>
 				<View style = {styles.header}>

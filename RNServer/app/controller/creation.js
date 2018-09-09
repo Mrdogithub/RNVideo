@@ -5,6 +5,7 @@ var Audio = mongoose.model('Audio')
 var Creation = mongoose.model('Creation')
 var xss = require('xss')
 var Promise = require('bluebird')
+var _ = require('lodash')
 var config = require('../../config/config')
 var robot = require('../service/robot')
 
@@ -15,6 +16,43 @@ var userFields = [
     'age',
     'breed'
 ]
+
+exports.up = function *(next) {
+    var body = this.request.body
+    var user = this.session.user
+    var creation = yield Creation.findOne({
+        _id: body.id
+    })
+    .exec()
+
+    if (!creation) {
+        this.body = {
+            success: false,
+            err: '视屏没有了！'
+        }
+
+        return next
+    }
+
+    // 将点赞的用户id 存储到对应的creation votes数组里面
+    // 再次打开时，能够通过creation 获取到对该creation 点赞的用户
+    if (body.up === 'yes') {
+        creation.votes.push(String(user._id))
+    }
+    else {
+        // 如果用户对当前creation 取消点赞，从当前creation 里的votes 里面 去除 取消点赞的用户id
+        creation.votes = _.without(creation.votes, String(user._id))
+    }
+
+    // 获取最新的点赞数量
+    creation.up = creation.votes.length
+    yield creation.save()
+
+    this.body = {
+        success: true
+    }
+}
+
 exports.find = function *(next) {
     var page = parseInt(this.query.page, 10)
     var count = 5
